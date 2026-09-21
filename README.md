@@ -1,5 +1,10 @@
 # blog
-My blog service.
+My blog service. Just a CRUD project, nothing interesting here.
+
+## Stack
+- Go (v1.27.1)
+- SQLite ([golib](https://gitlab.com/cznic/sqlite))
+- Garage S3
 
 
 ## Rules
