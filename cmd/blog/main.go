@@ -13,7 +13,11 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	// Go falls back to the host's mime.types for these, and a scratch container has none.
-	for ext, typ := range map[string]string{".woff2": "font/woff2", ".woff": "font/woff"} {
+	for ext, typ := range map[string]string{
+		".woff2":       "font/woff2",
+		".woff":        "font/woff",
+		".webmanifest": "application/manifest+json",
+	} {
 		if err := mime.AddExtensionType(ext, typ); err != nil {
 			logger.Error(err.Error())
 			os.Exit(1)
