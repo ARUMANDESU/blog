@@ -2,21 +2,25 @@ package main
 
 import (
 	"log/slog"
+	"mime"
 	"net/http"
 	"os"
 
-	"github.com/arumandesu/blog/assets"
 	"github.com/arumandesu/blog/internal/transport"
 )
 
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-	fileServer := http.FileServerFS(assets.StaticFiles)
+	// Go falls back to the host's mime.types for these, and a scratch container has none.
+	for ext, typ := range map[string]string{".woff2": "font/woff2", ".woff": "font/woff"} {
+		if err := mime.AddExtensionType(ext, typ); err != nil {
+			logger.Error(err.Error())
+			os.Exit(1)
+		}
+	}
 
 	mux := http.NewServeMux()
-	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
-
 	h := &transport.HTTP{}
 	transport.Handle(mux, h)
 
