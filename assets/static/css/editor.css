@@ -1,0 +1,311 @@
+/* ---------------------------------------------------------------
+   editor.css — gruvbox skin for EasyMDE / CodeMirror 5.
+   Loaded after easymde.min.css (see views.editorHead), which
+   hardcodes a light Bootstrap-ish palette; every literal colour in
+   that file is re-stated here against the site tokens.
+   --------------------------------------------------------------- */
+
+:root {
+	/* gruvbox light — syntax accents, only used by the editor */
+	--gb-red: #9d0006;
+	--gb-green: #79740e;
+	--gb-yellow: #b57614;
+	--gb-blue: #076678;
+	--gb-purple: #8f3f71;
+	--gb-aqua: #427b58;
+	--gb-orange: #af3a03;
+	--gb-gray: #928374;
+
+	--editor-sel: rgba(63, 115, 85, 0.22);
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		/* gruvbox dark — bright variants, they need to carry on bg0 */
+		--gb-red: #fb4934;
+		--gb-green: #b8bb26;
+		--gb-yellow: #fabd2f;
+		--gb-blue: #83a598;
+		--gb-purple: #d3869b;
+		--gb-aqua: #8ec07c;
+		--gb-orange: #fe8019;
+		--gb-gray: #928374;
+
+		--editor-sel: rgba(104, 157, 106, 0.3);
+	}
+}
+
+/* ---------------------------------------------------------------
+   Frame
+   --------------------------------------------------------------- */
+
+.EasyMDEContainer .CodeMirror {
+	background: var(--surface);
+	color: var(--b-txt);
+	border: 1px solid var(--line);
+	border-top: 0;
+	border-bottom-left-radius: var(--radius);
+	border-bottom-right-radius: var(--radius);
+	font-family: var(--b-font-mono);
+	font-size: 0.9375rem;
+	line-height: 1.7;
+}
+
+.EasyMDEContainer .CodeMirror-fullscreen {
+	background: var(--b-bg-1);
+}
+
+.EasyMDEContainer .CodeMirror-placeholder {
+	color: var(--muted);
+	opacity: 1;
+}
+
+.CodeMirror-gutters {
+	background: var(--b-bg-2);
+	border-right: 1px solid var(--line);
+}
+
+.CodeMirror-linenumber {
+	color: var(--muted);
+}
+
+/* cursor + selection */
+.CodeMirror-cursor {
+	border-left-color: var(--accent);
+}
+
+.CodeMirror div.CodeMirror-secondarycursor {
+	border-left-color: var(--muted);
+}
+
+.CodeMirror-selected,
+.EasyMDEContainer .CodeMirror-focused .CodeMirror-selected {
+	background: var(--editor-sel);
+}
+
+.CodeMirror-line::selection,
+.CodeMirror-line > span::selection,
+.CodeMirror-line > span > span::selection {
+	background: var(--editor-sel);
+}
+
+.CodeMirror-activeline-background {
+	background: var(--b-bg-2);
+}
+
+div.CodeMirror span.CodeMirror-matchingbracket {
+	color: var(--gb-aqua);
+}
+
+div.CodeMirror span.CodeMirror-nonmatchingbracket {
+	color: var(--gb-red);
+}
+
+/* ---------------------------------------------------------------
+   Toolbar
+   --------------------------------------------------------------- */
+
+.editor-toolbar {
+	background: var(--b-bg-2);
+	border: 1px solid var(--line);
+	border-top-left-radius: var(--radius);
+	border-top-right-radius: var(--radius);
+	color: var(--b-txt);
+}
+
+.editor-toolbar.fullscreen {
+	background: var(--b-bg-2);
+}
+
+/* the stock fade-out gradients are hardcoded white */
+.editor-toolbar.fullscreen::before {
+	background: linear-gradient(to right, var(--b-bg-2) 0, transparent 100%);
+}
+
+.editor-toolbar.fullscreen::after {
+	background: linear-gradient(to left, var(--b-bg-2) 0, transparent 100%);
+}
+
+.editor-toolbar button {
+	color: var(--muted);
+}
+
+.editor-toolbar button:hover,
+.editor-toolbar button.active {
+	background: var(--surface);
+	border-color: var(--line-strong);
+	color: var(--accent);
+}
+
+.editor-toolbar i.separator {
+	border-left: 1px solid var(--line-strong);
+	border-right: 0;
+}
+
+.editor-toolbar .easymde-dropdown,
+.editor-toolbar .easymde-dropdown:hover {
+	background: linear-gradient(
+		to bottom right,
+		var(--surface) 0,
+		var(--surface) 84%,
+		var(--b-txt) 50%,
+		var(--b-txt) 100%
+	);
+	border: 1px solid var(--line);
+}
+
+.easymde-dropdown-content {
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+}
+
+/* ---------------------------------------------------------------
+   Status bar
+   --------------------------------------------------------------- */
+
+.editor-statusbar {
+	color: var(--muted);
+	font-family: var(--b-font-mono);
+	font-size: 0.75rem;
+	font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------
+   Preview pane
+   --------------------------------------------------------------- */
+
+.editor-preview,
+.editor-preview-side {
+	background: var(--b-bg-1);
+	color: var(--b-txt);
+	border-color: var(--line);
+}
+
+.editor-preview pre {
+	background: var(--b-bg-2);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+
+.editor-preview table td,
+.editor-preview table th {
+	border: 1px solid var(--line);
+}
+
+/* ---------------------------------------------------------------
+   Markdown tokens
+   --------------------------------------------------------------- */
+
+.EasyMDEContainer .cm-header {
+	color: var(--gb-green);
+}
+
+/* easymde sizes h1-h4 with `calc(rem + vw)`, so they balloon on a wide
+   window and overshoot what the preview renders. This is source text —
+   keep the hierarchy visible but flat, on the .prose scale. */
+.EasyMDEContainer .cm-header-1 {
+	font-size: 1.375rem;
+}
+
+.EasyMDEContainer .cm-header-2 {
+	font-size: 1.1875rem;
+}
+
+.EasyMDEContainer .cm-header-3 {
+	font-size: 1.0625rem;
+}
+
+.EasyMDEContainer .cm-header-4,
+.EasyMDEContainer .cm-header-5,
+.EasyMDEContainer .cm-header-6 {
+	font-size: 1rem;
+}
+
+.EasyMDEContainer .cm-header-1,
+.EasyMDEContainer .cm-header-2,
+.EasyMDEContainer .cm-header-3,
+.EasyMDEContainer .cm-header-4,
+.EasyMDEContainer .cm-header-5,
+.EasyMDEContainer .cm-header-6 {
+	line-height: 1.4;
+	margin-bottom: 0;
+}
+
+/* the leading #### is syntax, not title — recede it */
+.EasyMDEContainer .cm-formatting-header {
+	color: var(--muted);
+	font-weight: 400;
+}
+
+.EasyMDEContainer .cm-quote {
+	color: var(--gb-gray);
+}
+
+.EasyMDEContainer .cm-link {
+	color: var(--gb-blue);
+}
+
+.EasyMDEContainer .cm-url {
+	color: var(--muted);
+}
+
+.EasyMDEContainer .cm-string {
+	color: var(--gb-purple);
+}
+
+.EasyMDEContainer .cm-tag {
+	color: var(--gb-red);
+}
+
+.EasyMDEContainer .cm-attribute {
+	color: var(--gb-yellow);
+}
+
+/* inline + fenced code */
+.EasyMDEContainer .cm-comment {
+	background: var(--b-bg-2);
+	color: var(--gb-aqua);
+	border-radius: 2px;
+}
+
+/* list bullets and numbers */
+.EasyMDEContainer .cm-variable-2 {
+	color: var(--gb-blue);
+}
+
+.EasyMDEContainer .cm-variable-3,
+.EasyMDEContainer .cm-keyword,
+.EasyMDEContainer .cm-atom {
+	color: var(--gb-purple);
+}
+
+.EasyMDEContainer .cm-number {
+	color: var(--gb-purple);
+}
+
+.EasyMDEContainer .cm-hr {
+	color: var(--line-strong);
+}
+
+.EasyMDEContainer .cm-error,
+.EasyMDEContainer .cm-invalidchar {
+	color: var(--gb-red);
+}
+
+.EasyMDEContainer .cm-negative {
+	color: var(--gb-red);
+}
+
+.EasyMDEContainer .cm-positive {
+	color: var(--gb-green);
+}
+
+.EasyMDEContainer .cm-searching {
+	background: var(--accent-soft);
+	outline: 1px solid var(--accent);
+}
+
+.CodeMirror .cm-spell-error:not(.cm-url):not(.cm-comment):not(.cm-tag):not(.cm-word) {
+	background: rgba(251, 73, 52, 0.16);
+}

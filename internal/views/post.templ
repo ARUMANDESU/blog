@@ -1,7 +1,7 @@
 package views
 
 templ Post(p PostView) {
-	@Base(p.Title) {
+	@Base(p.Title, nil) {
 		<a class="back-link" href="/">&larr; all posts</a>
 		<article class="post">
 			<header class="post-header">

@@ -1,0 +1,17 @@
+package views
+
+templ Editor() {
+	@Base("Editor", editorHead()) {
+		<textarea></textarea>
+		<script>
+			const easyMDE = new EasyMDE();
+		</script>
+	}
+}
+
+templ editorHead() {
+	<link rel="stylesheet" href="/static/css/easymde.min.css"/>
+	// gruvbox skin — must come after easymde's own sheet
+	<link rel="stylesheet" href="/static/css/editor.css"/>
+	<script src="/static/js/easymde.min.js"></script>
+}

@@ -1,7 +1,7 @@
 package views
 
 templ Home(posts []PostCard) {
-	@Base("ARUMANDESU") {
+	@Base("ARUMANDESU", nil) {
 		if len(posts) == 0 {
 			<p class="empty-state">nothing posted yet.</p>
 		} else {

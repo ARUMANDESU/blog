@@ -18,6 +18,7 @@ func Handle(mux *http.ServeMux, h *HTTP) {
 	mux.Handle("GET /static/", cacheImmutable(http.StripPrefix("/static", fileServer), "/static/fonts/"))
 	mux.HandleFunc("GET /", h.GetHome)
 	mux.HandleFunc("GET /posts/{slug}", h.GetPost)
+	mux.HandleFunc("GET /posts/editor", h.GetPostsEditor)
 }
 
 // TODO: replace the placeholder data
@@ -65,6 +66,10 @@ func (h *HTTP) GetHome(w http.ResponseWriter, r *http.Request) {
 
 func (h *HTTP) GetPost(w http.ResponseWriter, r *http.Request) {
 	_ = views.Post(placeholderPost).Render(r.Context(), w)
+}
+
+func (h *HTTP) GetPostsEditor(w http.ResponseWriter, r *http.Request) {
+	_ = views.Editor().Render(r.Context(), w)
 }
 
 // cacheImmutable marks everything under prefix as permanently cacheable
