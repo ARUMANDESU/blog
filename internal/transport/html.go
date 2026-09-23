@@ -17,7 +17,7 @@ func Handle(mux *http.ServeMux, h *HTTP) {
 
 	mux.Handle("GET /static/", cacheImmutable(http.StripPrefix("/static", fileServer), "/static/fonts/"))
 	mux.HandleFunc("GET /", h.GetHome)
-	mux.HandleFunc("GET /post/{slug}", h.GetPost)
+	mux.HandleFunc("GET /posts/{slug}", h.GetPost)
 }
 
 // TODO: replace the placeholder data
