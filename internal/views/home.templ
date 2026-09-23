@@ -1,7 +1,31 @@
 package views
 
-templ Home() {
-	@Base("Home") {
-		<h1>Home page</h1>
+templ Home(posts []PostCard) {
+	@Base("ARUMANDESU") {
+		if len(posts) == 0 {
+			<p class="empty-state">nothing posted yet.</p>
+		} else {
+			<ul class="post-list">
+				for _, p := range posts {
+					<li>
+						@postCard(p)
+					</li>
+				}
+			</ul>
+		}
 	}
+}
+
+templ postCard(p PostCard) {
+	<a class="post-card" href={ templ.SafeURL("/post/" + p.Slug) }>
+		<div class="post-card__head">
+			<h2 class="post-card__title">{ p.Title }</h2>
+			<time class="post-card__date" datetime={ machineDate(p.CreatedAt) }>
+				{ formatDate(p.CreatedAt) }
+			</time>
+		</div>
+		if p.Description != "" {
+			<p class="post-card__desc">{ p.Description }</p>
+		}
+	</a>
 }

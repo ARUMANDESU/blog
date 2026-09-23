@@ -1,7 +1,20 @@
 package views
 
-templ Post() {
-	@Base("Post") {
-		<h1>Post page</h1>
+templ Post(p PostView) {
+	@Base(p.Title) {
+		<a class="back-link" href="/">&larr; all posts</a>
+		<article class="post">
+			<header class="post-header">
+				<h1 class="post-header__title">{ p.Title }</h1>
+				<p class="post-header__meta">
+					<time datetime={ machineDate(p.CreatedAt) }>
+						{ formatDate(p.CreatedAt) }
+					</time>
+				</p>
+			</header>
+			<div class="prose">
+				@templ.Raw(p.HTMLContent)
+			</div>
+		</article>
 	}
 }
