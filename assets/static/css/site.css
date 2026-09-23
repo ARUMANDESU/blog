@@ -34,17 +34,33 @@
 	font-display: swap;
 }
 
+/* ---------------------------------------------------------------
+   Gruvbox — bamboo ships Nord, so every --b-* colour token is
+   overridden here. Accent is the aqua-green family; the light one is
+   nudged a shade darker than gruvbox faded_aqua (#427b58) so link
+   text clears 4.5:1 on bg0.
+   --------------------------------------------------------------- */
+
 :root {
 	--b-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-	--b-link: #3a7a57;
+
+	/* gruvbox light */
+	--b-txt: #3c3836; /* fg1 */
+	--b-bg-1: #fbf1c7; /* bg0 */
+	--b-bg-2: #ebdbb2; /* bg1 */
+	--b-line: #d5c4a1; /* bg2 */
+	--b-link: #3f7355;
+	--b-btn-bg: #3f7355;
+	--b-btn-txt: #fbf1c7;
+	--b-focus: #3f7355;
 
 	/* identity tokens */
-	--accent: #3a7a57;
-	--accent-soft: rgba(58, 122, 87, 0.09);
-	--line: #dbe0e6;
-	--line-strong: #c3cbd4;
-	--muted: #6b7280;
-	--surface: #fff;
+	--accent: #3f7355;
+	--accent-soft: rgba(63, 115, 85, 0.12);
+	--line: #d5c4a1; /* bg2 */
+	--line-strong: #bdae93; /* bg3 */
+	--muted: #665c54; /* fg3 */
+	--surface: #f9f5d7; /* bg0_h — cards lift off the page */
 
 	--radius: 14px;
 	--shell: 74ch;
@@ -53,20 +69,33 @@
 
 @media (prefers-color-scheme: dark) {
 	:root {
-		--b-link: #8ecfab;
+		/* gruvbox dark */
+		--b-txt: #ebdbb2; /* fg1 */
+		--b-bg-1: #282828; /* bg0 */
+		--b-bg-2: #3c3836; /* bg1 */
+		--b-line: #3c3836;
+		--b-link: #689d6a; /* neutral aqua */
+		--b-btn-bg: #689d6a;
+		--b-btn-txt: #282828;
+		--b-focus: #689d6a;
 
-		--accent: #8ecfab;
-		--accent-soft: rgba(142, 207, 171, 0.1);
-		--line: #3b4252;
-		--line-strong: #4c566a;
-		--muted: #9aa5b8;
-		--surface: #333a48;
+		--accent: #689d6a;
+		--accent-soft: rgba(104, 157, 106, 0.16);
+		--line: #3c3836; /* bg1 */
+		--line-strong: #504945; /* bg2 */
+		--muted: #a89984; /* fg4 */
+		--surface: #32302f; /* bg0_s */
 	}
 }
 
 /* ---------------------------------------------------------------
    Shell
    --------------------------------------------------------------- */
+
+/* bamboo paints <body>; <html> needs it too or overscroll flashes UA white */
+html {
+	background: var(--b-bg-1);
+}
 
 body {
 	max-width: var(--shell);
