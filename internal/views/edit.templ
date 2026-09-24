@@ -1,15 +1,19 @@
 package views
 
-templ Editor() {
-	@Base("Editor", editorHead()) {
-		<textarea></textarea>
+templ Edit(postID string, mdContent string) {
+	@Base("Edit", editHead()) {
+		<div class="edit-bar">
+			<a class="back-link" href="/admin">&larr; all posts</a>
+			<a class="admin-action" href={ postPreviewURL(postID) }>preview</a>
+		</div>
+		<textarea>{ mdContent }</textarea>
 		<script>
 			const easyMDE = new EasyMDE();
 		</script>
 	}
 }
 
-templ editorHead() {
+templ editHead() {
 	<link rel="stylesheet" href="/static/css/easymde.min.css"/>
 	// gruvbox skin — must come after easymde's own sheet
 	<link rel="stylesheet" href="/static/css/editor.css"/>

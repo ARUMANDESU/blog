@@ -18,7 +18,15 @@ func Handle(mux *http.ServeMux, h *HTTP) {
 	mux.Handle("GET /static/", cacheImmutable(http.StripPrefix("/static", fileServer), "/static/fonts/"))
 	mux.HandleFunc("GET /", h.GetHome)
 	mux.HandleFunc("GET /posts/{slug}", h.GetPost)
-	mux.HandleFunc("GET /posts/editor", h.GetPostsEditor)
+	mux.HandleFunc("GET /admin", h.GetAdmin)
+	mux.HandleFunc("GET /admin/guest", h.GetAdminGuest)
+	mux.HandleFunc("GET /posts/{id}/edit", h.GetPostEdit)
+	mux.HandleFunc("GET /posts/{id}/preview", h.GetPostPreview)
+
+	mux.HandleFunc("POST /posts", h.PostCreatePost)
+	mux.HandleFunc("POST /posts/{id}/edit", h.PostEditPost)
+	mux.HandleFunc("POST /posts/{id}/archive", h.PostArchivePost)
+	mux.HandleFunc("POST /posts/{id}/post", h.PostPostPost)
 }
 
 // TODO: replace the placeholder data
@@ -60,6 +68,42 @@ var placeholderPost = views.PostView{
 <ul><li>Markdown to HTML on write</li><li>Media uploads</li><li>An admin surface</li></ul>`,
 }
 
+// placeholderMarkdown is the source placeholderPost.HTMLContent stands in for.
+const placeholderMarkdown = "This is placeholder content standing in for rendered markdown.\n" +
+	"\n" +
+	"## Why templ\n" +
+	"\n" +
+	"Templates are compiled Go, so a typo is a build error instead of a blank page at runtime.\n" +
+	"\n" +
+	"```templ\n" +
+	"templ Home(posts []PostCard) {\n" +
+	"\t@Base(\"ARUMANDESU\") {\n" +
+	"\t\t<ul class=\"post-list\">...</ul>\n" +
+	"\t}\n" +
+	"}\n" +
+	"```\n" +
+	"\n" +
+	"> The nice part: no separate template cache, no reflection.\n" +
+	"\n" +
+	"## What is next\n" +
+	"\n" +
+	"- Markdown to HTML on write\n" +
+	"- Media uploads\n" +
+	"- An admin surface\n"
+
+var placeholderAdminPosts = []views.AdminPost{
+	{ID: "0199a1b2-0000-7000-8000-000000000003", Title: "", Status: views.StatusDraft, UpdatedAt: time.Date(2026, 9, 23, 0, 0, 0, 0, time.UTC)},
+	{ID: "0199a1b2-0000-7000-8000-000000000001", Slug: "hello", Title: "Writing a blog engine in Go", Status: views.StatusPosted, UpdatedAt: time.Date(2026, 9, 21, 0, 0, 0, 0, time.UTC)},
+	{ID: "0199a1b2-0000-7000-8000-000000000002", Slug: "domain", Title: "Keeping the domain honest", Status: views.StatusArchived, UpdatedAt: time.Date(2026, 9, 14, 0, 0, 0, 0, time.UTC)},
+}
+
+var placeholderPreview = views.PreviewView{
+	Title:       placeholderPost.Title,
+	Status:      views.StatusDraft,
+	CreatedAt:   placeholderPost.CreatedAt,
+	HTMLContent: placeholderPost.HTMLContent,
+}
+
 func (h *HTTP) GetHome(w http.ResponseWriter, r *http.Request) {
 	_ = views.Home(placeholderPosts).Render(r.Context(), w)
 }
@@ -68,8 +112,37 @@ func (h *HTTP) GetPost(w http.ResponseWriter, r *http.Request) {
 	_ = views.Post(placeholderPost).Render(r.Context(), w)
 }
 
-func (h *HTTP) GetPostsEditor(w http.ResponseWriter, r *http.Request) {
-	_ = views.Editor().Render(r.Context(), w)
+func (h *HTTP) GetPostEdit(w http.ResponseWriter, r *http.Request) {
+	_ = views.Edit(r.PathValue("id"), placeholderMarkdown).Render(r.Context(), w)
+}
+
+func (h *HTTP) GetPostPreview(w http.ResponseWriter, r *http.Request) {
+	p := placeholderPreview
+	p.ID = r.PathValue("id")
+	_ = views.Preview(p).Render(r.Context(), w)
+}
+
+func (h *HTTP) GetAdmin(w http.ResponseWriter, r *http.Request) {
+	_ = views.Admin(placeholderAdminPosts).Render(r.Context(), w)
+}
+
+func (h *HTTP) GetAdminGuest(w http.ResponseWriter, r *http.Request) {
+	_ = views.GuestView().Render(r.Context(), w)
+}
+
+func (h *HTTP) PostCreatePost(w http.ResponseWriter, r *http.Request) {
+	// TODO: create an empty draft, then redirect to /posts/{id}/edit
+}
+
+func (h *HTTP) PostPostPost(w http.ResponseWriter, r *http.Request) {
+	// TODO: implement
+}
+
+func (h *HTTP) PostArchivePost(w http.ResponseWriter, r *http.Request) {
+	// TODO: implement
+}
+func (h *HTTP) PostEditPost(w http.ResponseWriter, r *http.Request) {
+	// TODO: implement
 }
 
 // cacheImmutable marks everything under prefix as permanently cacheable
