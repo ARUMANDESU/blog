@@ -42,7 +42,7 @@ func Base(title string, head templ.Component) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><meta name=\"color-scheme\" content=\"light dark\"><meta name=\"theme-color\" content=\"#fbf1c7\" media=\"(prefers-color-scheme: light)\"><meta name=\"theme-color\" content=\"#282828\" media=\"(prefers-color-scheme: dark)\"><link rel=\"preload\" href=\"/static/fonts/JetBrainsMono-Regular.woff2\" as=\"font\" type=\"font/woff2\" crossorigin=\"anonymous\"><link rel=\"preload\" href=\"/static/fonts/JetBrainsMono-SemiBold.woff2\" as=\"font\" type=\"font/woff2\" crossorigin=\"anonymous\"><link rel=\"stylesheet\" href=\"/static/css/bamboo.min.css\"><link rel=\"stylesheet\" href=\"/static/css/site.css\"><script defer src=\"/static/js/htmx.min.js\"></script><link rel=\"apple-touch-icon\" sizes=\"180x180\" href=\"/static/favicon/apple-touch-icon.png\"><link rel=\"icon\" type=\"image/png\" sizes=\"32x32\" href=\"/static/favicon/favicon-32x32.png\"><link rel=\"icon\" type=\"image/png\" sizes=\"16x16\" href=\"/static/favicon/favicon-16x16.png\"><link rel=\"manifest\" href=\"/static/site.webmanifest\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><script>\n\t\t\t\tif (window.name === \"guest\" && window.self !== window.top) document.documentElement.classList.add(\"as-guest\");\n\t\t\t</script><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><meta name=\"color-scheme\" content=\"light dark\"><meta name=\"theme-color\" content=\"#fbf1c7\" media=\"(prefers-color-scheme: light)\"><meta name=\"theme-color\" content=\"#282828\" media=\"(prefers-color-scheme: dark)\"><link rel=\"preload\" href=\"/static/fonts/JetBrainsMono-Regular.woff2\" as=\"font\" type=\"font/woff2\" crossorigin=\"anonymous\"><link rel=\"preload\" href=\"/static/fonts/JetBrainsMono-SemiBold.woff2\" as=\"font\" type=\"font/woff2\" crossorigin=\"anonymous\"><link rel=\"stylesheet\" href=\"/static/css/bamboo.min.css\"><link rel=\"stylesheet\" href=\"/static/css/site.css\"><script defer src=\"/static/js/htmx.min.js\"></script><link rel=\"apple-touch-icon\" sizes=\"180x180\" href=\"/static/favicon/apple-touch-icon.png\"><link rel=\"icon\" type=\"image/png\" sizes=\"32x32\" href=\"/static/favicon/favicon-32x32.png\"><link rel=\"icon\" type=\"image/png\" sizes=\"16x16\" href=\"/static/favicon/favicon-16x16.png\"><link rel=\"manifest\" href=\"/static/site.webmanifest\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -105,7 +105,7 @@ func Header() templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<header class=\"site-header\"><a class=\"site-header__brand\" href=\"/\">ARUMANDESU</a><nav class=\"site-nav\"><a href=\"https://github.com/ARUMANDESU\" rel=\"me noopener\">github</a></nav></header>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<header class=\"site-header\"><a class=\"site-header__brand\" href=\"/\">ARUMANDESU</a><nav class=\"site-nav\"><a href=\"https://github.com/ARUMANDESU\" rel=\"me noopener\">github</a> <a class=\"site-nav__admin\" href=\"/admin\">admin</a></nav></header>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

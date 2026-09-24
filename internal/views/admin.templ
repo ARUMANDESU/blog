@@ -1,0 +1,60 @@
+package views
+
+templ Admin(posts []AdminPost) {
+	@Base("Admin", nil) {
+		<div class="admin-head">
+			<h1 class="admin-head__title">posts</h1>
+			<div class="admin-head__actions">
+				<a class="admin-action" href="/admin/guest">guest view</a>
+				// creates an empty draft; the handler redirects to its edit page
+				<form method="post" action="/posts">
+					<button type="submit">+ new post</button>
+				</form>
+			</div>
+		</div>
+		if len(posts) == 0 {
+			<p class="empty-state">no posts yet.</p>
+		} else {
+			<ul class="admin-list">
+				for _, p := range posts {
+					<li class="admin-row">
+						@adminRow(p)
+					</li>
+				}
+			</ul>
+		}
+	}
+}
+
+templ adminRow(p AdminPost) {
+	<div class="admin-row__main">
+		<a class="admin-row__title" href={ postEditURL(p.ID) }>{ titleOrUntitled(p.Title) }</a>
+		<p class="admin-row__meta">
+			@statusBadge(p.Status)
+			<span>
+				updated
+				<time datetime={ machineDate(p.UpdatedAt) }>{ formatDate(p.UpdatedAt) }</time>
+			</span>
+			if p.Status == StatusPosted {
+				<a href={ templ.SafeURL("/posts/" + p.Slug) }>live &rarr;</a>
+			}
+		</p>
+	</div>
+	<div class="admin-actions">
+		<a class="admin-action" href={ postEditURL(p.ID) }>edit</a>
+		<a class="admin-action" href={ postPreviewURL(p.ID) }>preview</a>
+		if p.Status != StatusArchived {
+			@archiveForm(p.ID, "admin-action admin-action--danger")
+		}
+	</div>
+}
+
+templ statusBadge(status string) {
+	<span class={ "status", "status--" + status }>{ status }</span>
+}
+
+templ archiveForm(id string, class string) {
+	<form method="post" action={ postArchiveURL(id) } onsubmit="return confirm('Archive this post?')">
+		<button type="submit" class={ class }>archive</button>
+	</form>
+}

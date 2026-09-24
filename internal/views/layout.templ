@@ -6,6 +6,10 @@ templ Base(title string, head templ.Component) {
 		<head>
 			<meta charset="utf-8"/>
 			<title>{ title }</title>
+			// inside the admin guest-view frame: flag the page so admin-only chrome hides (cosmetic, not access control)
+			<script>
+				if (window.name === "guest" && window.self !== window.top) document.documentElement.classList.add("as-guest");
+			</script>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
 			<meta name="color-scheme" content="light dark"/>
 			// gruvbox bg0, light and dark — colours the mobile browser chrome
@@ -41,6 +45,7 @@ templ Header() {
 		<a class="site-header__brand" href="/">ARUMANDESU</a>
 		<nav class="site-nav">
 			<a href="https://github.com/ARUMANDESU" rel="me noopener">github</a>
+			<a class="site-nav__admin" href="/admin">admin</a>
 		</nav>
 	</header>
 }

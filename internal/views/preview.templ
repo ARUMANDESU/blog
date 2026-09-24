@@ -1,0 +1,37 @@
+package views
+
+// Preview renders the post the way readers get it, with the admin actions
+// pinned to the right edge of the viewport (stacked above the post on narrow screens).
+templ Preview(p PreviewView) {
+	@Base("Preview: "+titleOrUntitled(p.Title), nil) {
+		<aside class="preview-panel" aria-label="post actions">
+			<p class="preview-panel__label">
+				preview
+				@statusBadge(p.Status)
+			</p>
+			<a class="admin-action" href={ postEditURL(p.ID) }>edit</a>
+			if p.Status != StatusPosted {
+				<form method="post" action={ postPublishURL(p.ID) }>
+					<button type="submit" class="admin-action admin-action--primary">post it</button>
+				</form>
+			}
+			if p.Status != StatusArchived {
+				@archiveForm(p.ID, "admin-action admin-action--danger")
+			}
+			<a class="admin-action" href="/admin">&larr; all posts</a>
+		</aside>
+		<article class="post">
+			<header class="post-header">
+				<h1 class="post-header__title">{ titleOrUntitled(p.Title) }</h1>
+				<p class="post-header__meta">
+					<time datetime={ machineDate(p.CreatedAt) }>
+						{ formatDate(p.CreatedAt) }
+					</time>
+				</p>
+			</header>
+			<div class="prose">
+				@templ.Raw(p.HTMLContent)
+			</div>
+		</article>
+	}
+}

@@ -1,0 +1,33 @@
+package views
+
+// GuestView shows the public site in a frame at a chosen viewport width,
+// so the admin can browse it the way a visitor would.
+templ GuestView() {
+	@Base("Guest view", nil) {
+		<div class="guest-bar">
+			<a class="back-link" href="/admin">&larr; all posts</a>
+			<div class="guest-bar__widths" role="group" aria-label="viewport width">
+				<button type="button" class="admin-action" data-width="390px">phone</button>
+				<button type="button" class="admin-action" data-width="768px">tablet</button>
+				<button type="button" class="admin-action" data-width="100%" aria-pressed="true">desktop</button>
+			</div>
+			<a class="admin-action" href="/" target="_blank" rel="noopener">open in new tab &nearr;</a>
+		</div>
+		<div class="guest-stage">
+			// name="guest" survives navigation inside the frame; Base reads it to hide admin chrome
+			<iframe class="guest-frame" name="guest" src="/" title="site as a guest sees it"></iframe>
+		</div>
+		<script>
+			(() => {
+				const frame = document.querySelector(".guest-frame");
+				const buttons = document.querySelectorAll(".guest-bar__widths button");
+				for (const b of buttons) {
+					b.addEventListener("click", () => {
+						frame.style.width = b.dataset.width;
+						for (const o of buttons) o.setAttribute("aria-pressed", o === b);
+					});
+				}
+			})();
+		</script>
+	}
+}
