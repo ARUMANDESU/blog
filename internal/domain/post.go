@@ -1,17 +1,27 @@
 package domain
 
 import (
-	"slices"
+	"bytes"
+	"errors"
+	"fmt"
 	"time"
 	"uuid"
 
 	"github.com/arumandesu/blog/pkg"
+	slugx "github.com/gosimple/slug"
+	"github.com/yuin/goldmark/v2/parser"
+	"github.com/yuin/goldmark/v2/renderer/html"
 )
 
 const (
 	TitleMaxLen     = 200
 	DescMaxLen      = 1500
 	MdContentMaxLen = 100_000
+)
+
+var (
+	ErrInvalidSlug = errors.New("invalid slug")
+	ErrEmptySlug   = errors.New("empty slug")
 )
 
 type PostStatus string
@@ -25,11 +35,10 @@ const (
 type Post struct {
 	id              uuid.UUID
 	title           string
+	slug            string
 	description     string
 	markdownContent []byte
 	htmlContent     []byte // fill this on write/update markdownContent
-	attachedMedia   []uuid.UUID
-	usedMedia       []uuid.UUID // all media attached to and imported into a post
 	status          PostStatus
 	createdAt       time.Time
 	updatedAt       time.Time
@@ -40,46 +49,15 @@ func NewID() uuid.UUID {
 	return uuid.NewV7()
 }
 
-func CreatePost(
-	id uuid.UUID,
-	title string,
-	description string,
-	mdContent []byte,
-	createdAt time.Time,
-) (*Post, error) {
-	if id == uuid.Nil() {
-		return nil, pkg.NewFieldError("id", "must be provided", pkg.ErrEmpty)
-	}
-	if len(title) > TitleMaxLen {
-		return nil, pkg.NewLimitError("title", TitleMaxLen, pkg.ErrExceedsMax)
-	}
-	if len(description) > DescMaxLen {
-		return nil, pkg.NewLimitError("description", DescMaxLen, pkg.ErrExceedsMax)
-	}
-	// I am using len deliberately instead of [utf8.RuneCountInString]
-	// because [ContentMaxLen] is just abuse guard not a real limit for user and len is O(1).
-	// Expected content for this project is around 3k-30k chars:
-	// which will fit en, ru and kz (note: chars of latter two takes 2 bytes in UTF-8)
-	if len(mdContent) > MdContentMaxLen {
-		return nil, pkg.NewLimitError("markdown_content", MdContentMaxLen, pkg.ErrExceedsMax)
-	}
-	if createdAt.IsZero() {
-		return nil, pkg.NewFieldError("created_at", "must be provided", pkg.ErrEmpty)
-	}
-	createdAt = createdAt.UTC()
-
+func CreatePost() *Post {
+	now := time.Now().UTC()
 	return &Post{
-		id:              id,
-		title:           title,
-		description:     description,
-		markdownContent: mdContent,
-		createdAt:       createdAt,
-		updatedAt:       createdAt,
-		archivedAt:      nil,
-		attachedMedia:   nil,
-		usedMedia:       nil,
-		status:          PostStatusDraft,
-	}, nil
+		id:         NewID(),
+		status:     PostStatusDraft,
+		createdAt:  now,
+		updatedAt:  now,
+		archivedAt: nil,
+	}
 }
 
 func (p *Post) UpdateTitle(title string) error {
@@ -87,6 +65,15 @@ func (p *Post) UpdateTitle(title string) error {
 		return pkg.NewLimitError("title", TitleMaxLen, pkg.ErrExceedsMax)
 	}
 	p.title = title
+	p.updatedAt = time.Now().UTC()
+	return nil
+}
+
+func (p *Post) UpdateSlug(slug string) error {
+	if !slugx.IsSlug(slug) {
+		return ErrInvalidSlug
+	}
+	p.slug = slug
 	p.updatedAt = time.Now().UTC()
 	return nil
 }
@@ -100,29 +87,12 @@ func (p *Post) UpdateDescription(desc string) error {
 	return nil
 }
 
-func (p *Post) UpdateContent(mdContent []byte, usedMedia []uuid.UUID) error {
+func (p *Post) UpdateContent(mdContent []byte) error {
 	if len(mdContent) > MdContentMaxLen {
 		return pkg.NewLimitError("markdown_content", MdContentMaxLen, pkg.ErrExceedsMax)
 	}
-	if slices.Contains(usedMedia, uuid.Nil()) {
-		return pkg.NewFieldError("used_media", "all elements must be valid", pkg.ErrInvalidInput)
-	}
 	p.markdownContent = mdContent
-	p.usedMedia = usedMedia
-	// TODO: convert markdown into html and store it on update
-	p.updatedAt = time.Now().UTC()
-	return nil
-}
-
-func (p *Post) UpdateAttachedMedia(attachedMedia []uuid.UUID, usedMedia []uuid.UUID) error {
-	if slices.Contains(attachedMedia, uuid.Nil()) {
-		return pkg.NewFieldError("attached_media", "all elements must be valid", pkg.ErrInvalidInput)
-	}
-	if slices.Contains(usedMedia, uuid.Nil()) {
-		return pkg.NewFieldError("used_media", "all elements must be valid", pkg.ErrInvalidInput)
-	}
-	p.attachedMedia = attachedMedia
-	p.usedMedia = usedMedia
+	p.htmlContent = convertMd2HTML(mdContent)
 	p.updatedAt = time.Now().UTC()
 	return nil
 }
@@ -134,41 +104,47 @@ func (p *Post) Archive() error {
 	p.status = PostStatusArchived
 	return nil
 }
-
-type Media struct {
-	id        uuid.UUID
-	postId    uuid.UUID
-	mime      string
-	s3Key     string
-	createdAt time.Time
-	deletedAt *time.Time
+func (p *Post) Unarchive() error {
+	p.archivedAt = nil
+	return p.Draft()
 }
 
-func CreateMedia(
-	id uuid.UUID,
-	postId uuid.UUID,
-	mime, s3Key string,
-	createdAt time.Time,
-) (*Media, error) {
-	if id == uuid.Nil() {
-		return nil, pkg.NewFieldError("id", "must be provided", pkg.ErrEmpty)
+func (p *Post) Post() error {
+	var err error
+	if len(p.title) == 0 {
+		err = fmt.Errorf("%w: title must be provided", pkg.ErrPreconditionNotMet)
 	}
-	if len(mime) == 0 {
-		return nil, pkg.NewFieldError("mime", "must be provided", pkg.ErrEmpty)
+	if len(p.description) == 0 {
+		err = errors.Join(err, fmt.Errorf("%w: description must be provided", pkg.ErrPreconditionNotMet))
 	}
-	if len(s3Key) == 0 {
-		return nil, pkg.NewFieldError("s3_key", "must be provided", pkg.ErrEmpty)
+	if err != nil {
+		return err
 	}
-	if createdAt.IsZero() {
-		return nil, pkg.NewFieldError("created_at", "must be provided", pkg.ErrEmpty)
+	if len(p.slug) == 0 {
+		return ErrEmptySlug
 	}
-	createdAt = createdAt.UTC()
-	return &Media{
-		id:        id,
-		postId:    postId,
-		mime:      mime,
-		s3Key:     s3Key,
-		createdAt: createdAt,
-		deletedAt: nil,
-	}, nil
+
+	p.updatedAt = time.Now().UTC()
+	p.status = PostStatusPosted
+	return nil
+}
+
+func (p *Post) Draft() error {
+	p.updatedAt = time.Now().UTC()
+	p.status = PostStatusDraft
+	return nil
+}
+
+func (p *Post) Id() uuid.UUID { return p.id }
+
+func convertMd2HTML(mdContent []byte) []byte {
+	var buf bytes.Buffer
+	p := parser.New()
+	n := p.Parse(mdContent)
+	r := html.New()
+	// I am intentionally ignoring this error because
+	// we are using [bytes.Buffer], and we are
+	// technically safe to ignore
+	_ = r.Render(&buf, mdContent, n)
+	return buf.Bytes()
 }

@@ -4,12 +4,15 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"uuid"
 
 	"github.com/arumandesu/blog/assets"
+	"github.com/arumandesu/blog/internal/app"
 	"github.com/arumandesu/blog/internal/views"
 )
 
 type HTTP struct {
+	app *app.App
 }
 
 func Handle(mux *http.ServeMux, h *HTTP) {
@@ -131,18 +134,59 @@ func (h *HTTP) GetAdminGuest(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *HTTP) PostCreatePost(w http.ResponseWriter, r *http.Request) {
-	// TODO: create an empty draft, then redirect to /posts/{id}/edit
+	_, err := h.app.CreatePost(r.Context())
+	if err != nil {
+		// TODO: handle error
+		return
+	}
+
+	// TODO: redirect to /posts/{id}/edit
 }
 
 func (h *HTTP) PostPostPost(w http.ResponseWriter, r *http.Request) {
-	// TODO: implement
+	id, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		// TODO: handle error
+		return
+	}
+
+	err = h.app.PostPost(r.Context(), id)
+	if err != nil {
+		// TODO: handle error
+		return
+	}
+
+	// TODO: redirect to /posts/{id}
 }
 
 func (h *HTTP) PostArchivePost(w http.ResponseWriter, r *http.Request) {
-	// TODO: implement
+	id, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		// TODO: handle error
+		return
+	}
+
+	err = h.app.ArchivePost(r.Context(), id)
+	if err != nil {
+		// TODO: handle error
+		return
+	}
+
+	// TODO: redirect to /admin
 }
 func (h *HTTP) PostEditPost(w http.ResponseWriter, r *http.Request) {
-	// TODO: implement
+	id, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		// TODO: handle error
+		return
+	}
+	// TODO: read from body
+
+	err = h.app.UpdateContent(r.Context(), id, nil)
+	if err != nil {
+		// TODO: handle error
+		return
+	}
 }
 
 // cacheImmutable marks everything under prefix as permanently cacheable
