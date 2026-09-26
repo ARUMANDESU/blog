@@ -6,6 +6,7 @@ import (
 	"uuid"
 
 	"github.com/arumandesu/blog/internal/domain"
+	"github.com/arumandesu/blog/pkg"
 )
 
 type PostRepo interface {
@@ -19,7 +20,8 @@ type PostRepo interface {
 }
 
 type App struct {
-	postRepo PostRepo
+	postRepo  PostRepo
+	txManager pkg.TxManager
 }
 
 type Post struct {
@@ -43,117 +45,123 @@ func (a *App) CreatePost(ctx context.Context) (uuid.UUID, error) {
 }
 
 func (a *App) PostPost(ctx context.Context, id uuid.UUID) error {
-	// TODO: wrap this into tx
-	post, err := a.postRepo.GetDomainPostById(ctx, id)
-	if err != nil {
-		return err
-	}
+	return a.txManager.InTx(ctx, func(ctx context.Context) error {
+		post, err := a.postRepo.GetDomainPostById(ctx, id)
+		if err != nil {
+			return err
+		}
 
-	err = post.Post()
-	if err != nil {
-		return err
-	}
+		err = post.Post()
+		if err != nil {
+			return err
+		}
 
-	err = a.postRepo.UpdatePost(ctx, post)
-	if err != nil {
-		return err
-	}
-	return nil
+		err = a.postRepo.UpdatePost(ctx, post)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 func (a *App) UpdateTitle(ctx context.Context, id uuid.UUID, title string) error {
-	// TODO: wrap this into tx
-	post, err := a.postRepo.GetDomainPostById(ctx, id)
-	if err != nil {
-		return err
-	}
+	return a.txManager.InTx(ctx, func(ctx context.Context) error {
+		post, err := a.postRepo.GetDomainPostById(ctx, id)
+		if err != nil {
+			return err
+		}
 
-	err = post.UpdateTitle(title)
-	if err != nil {
-		return err
-	}
+		err = post.UpdateTitle(title)
+		if err != nil {
+			return err
+		}
 
-	err = a.postRepo.UpdatePost(ctx, post)
-	if err != nil {
-		return err
-	}
-	return nil
+		err = a.postRepo.UpdatePost(ctx, post)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 func (a *App) UpdateDescription(ctx context.Context, id uuid.UUID, description string) error {
-	// TODO: wrap this into tx
-	post, err := a.postRepo.GetDomainPostById(ctx, id)
-	if err != nil {
-		return err
-	}
+	return a.txManager.InTx(ctx, func(ctx context.Context) error {
+		post, err := a.postRepo.GetDomainPostById(ctx, id)
+		if err != nil {
+			return err
+		}
 
-	err = post.UpdateDescription(description)
-	if err != nil {
-		return err
-	}
+		err = post.UpdateDescription(description)
+		if err != nil {
+			return err
+		}
 
-	err = a.postRepo.UpdatePost(ctx, post)
-	if err != nil {
-		return err
-	}
-	return nil
+		err = a.postRepo.UpdatePost(ctx, post)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 func (a *App) UpdateContent(ctx context.Context, id uuid.UUID, content []byte) error {
-	// TODO: wrap this into tx
-	post, err := a.postRepo.GetDomainPostById(ctx, id)
-	if err != nil {
-		return err
-	}
+	return a.txManager.InTx(ctx, func(ctx context.Context) error {
+		post, err := a.postRepo.GetDomainPostById(ctx, id)
+		if err != nil {
+			return err
+		}
 
-	err = post.UpdateContent(content)
-	if err != nil {
-		return err
-	}
+		err = post.UpdateContent(content)
+		if err != nil {
+			return err
+		}
 
-	err = a.postRepo.UpdatePost(ctx, post)
-	if err != nil {
-		return err
-	}
-	return nil
+		err = a.postRepo.UpdatePost(ctx, post)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 func (a *App) ArchivePost(ctx context.Context, id uuid.UUID) error {
-	// TODO: wrap this into tx
-	post, err := a.postRepo.GetDomainPostById(ctx, id)
-	if err != nil {
-		return err
-	}
+	return a.txManager.InTx(ctx, func(ctx context.Context) error {
+		post, err := a.postRepo.GetDomainPostById(ctx, id)
+		if err != nil {
+			return err
+		}
 
-	err = post.Archive()
-	if err != nil {
-		return err
-	}
+		err = post.Archive()
+		if err != nil {
+			return err
+		}
 
-	err = a.postRepo.UpdatePost(ctx, post)
-	if err != nil {
-		return err
-	}
-	return nil
+		err = a.postRepo.UpdatePost(ctx, post)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 func (a *App) UnarchivePost(ctx context.Context, id uuid.UUID) error {
-	// TODO: wrap this into tx
-	post, err := a.postRepo.GetDomainPostById(ctx, id)
-	if err != nil {
-		return err
-	}
+	return a.txManager.InTx(ctx, func(ctx context.Context) error {
+		post, err := a.postRepo.GetDomainPostById(ctx, id)
+		if err != nil {
+			return err
+		}
 
-	err = post.Unarchive()
-	if err != nil {
-		return err
-	}
+		err = post.Unarchive()
+		if err != nil {
+			return err
+		}
 
-	err = a.postRepo.UpdatePost(ctx, post)
-	if err != nil {
-		return err
-	}
-	return nil
+		err = a.postRepo.UpdatePost(ctx, post)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 func (a *App) GetPostById(ctx context.Context, id uuid.UUID) (Post, error) {

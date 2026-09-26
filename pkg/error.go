@@ -7,6 +7,8 @@ import (
 
 var (
 	ErrInternal = errors.New("internal")
+	ErrNotFound = errors.New("not_found")
+	ErrConflict = errors.New("conflict")
 
 	// client errors
 	ErrEmpty              = errors.New("empty")
