@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"cmp"
 	"context"
 	"slices"
 	"sync"
@@ -12,7 +11,10 @@ import (
 	"github.com/arumandesu/blog/pkg"
 )
 
-var _ app.PostRepo = (*InMemoryPostRepo)(nil)
+var (
+	_ app.PostRepo   = (*InMemoryPostRepo)(nil)
+	_ app.PostGetter = (*InMemoryPostRepo)(nil)
+)
 
 type InMemoryPostRepo struct {
 	mu    sync.RWMutex
@@ -62,6 +64,22 @@ func (r *InMemoryPostRepo) UpdatePost(_ context.Context, post *domain.Post) erro
 	return nil
 }
 
+// CheckSlug reports whether slug is already taken by some post.
+func (r *InMemoryPostRepo) CheckSlug(_ context.Context, slug string) (bool, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	if slug == "" {
+		return false, nil
+	}
+	for _, post := range r.posts {
+		if post.Slug() == slug {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func (r *InMemoryPostRepo) GetPostById(_ context.Context, id uuid.UUID) (app.Post, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -88,7 +106,25 @@ func (r *InMemoryPostRepo) GetPostBySlug(_ context.Context, slug string) (app.Po
 	return app.Post{}, pkg.ErrNotFound
 }
 
-func (r *InMemoryPostRepo) ListPosts(_ context.Context) ([]app.Post, error) {
+func (r *InMemoryPostRepo) ListPublishedPosts(_ context.Context) ([]app.Post, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	posts := make([]app.Post, 0, len(r.posts))
+	for _, post := range r.posts {
+		if post.Status() != domain.PostStatusPublished {
+			continue
+		}
+		posts = append(posts, toAppPost(&post))
+	}
+	// newest first
+	slices.SortFunc(posts, func(a, b app.Post) int {
+		return b.CreatedAt.Compare(a.CreatedAt)
+	})
+	return posts, nil
+}
+
+func (r *InMemoryPostRepo) ListAllPosts(_ context.Context) ([]app.Post, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -96,9 +132,9 @@ func (r *InMemoryPostRepo) ListPosts(_ context.Context) ([]app.Post, error) {
 	for _, post := range r.posts {
 		posts = append(posts, toAppPost(&post))
 	}
-	// newest first
+	// most recently touched first
 	slices.SortFunc(posts, func(a, b app.Post) int {
-		return cmp.Compare(b.CreatedAt.UnixNano(), a.CreatedAt.UnixNano())
+		return b.UpdatedAt.Compare(a.UpdatedAt)
 	})
 	return posts, nil
 }
@@ -118,12 +154,15 @@ func (r *InMemoryPostRepo) checkSlugUnique(post *domain.Post) error {
 
 func toAppPost(p *domain.Post) app.Post {
 	return app.Post{
-		ID:          p.Id(),
-		Title:       p.Title(),
-		Slug:        p.Slug(),
-		Description: p.Description(),
-		HTMLContent: p.HTMLContent(),
-		Status:      p.Status(),
-		CreatedAt:   p.CreatedAt(),
+		ID:              p.Id(),
+		Title:           p.Title(),
+		Slug:            p.Slug(),
+		Description:     p.Description(),
+		MarkdownContent: p.MarkdownContent(),
+		HTMLContent:     p.HTMLContent(),
+		Status:          p.Status(),
+		CreatedAt:       p.CreatedAt(),
+		UpdatedAt:       p.UpdatedAt(),
+		ArchivedAt:      p.ArchivedAt(),
 	}
 }

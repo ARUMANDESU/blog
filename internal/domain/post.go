@@ -28,7 +28,7 @@ type PostStatus string
 
 const (
 	PostStatusDraft     = PostStatus("draft")
-	PostStatusPublished = PostStatus("posted")
+	PostStatusPublished = PostStatus("published")
 	PostStatusArchived  = PostStatus("archived")
 )
 
@@ -135,13 +135,16 @@ func (p *Post) Draft() error {
 	return nil
 }
 
-func (p *Post) Id() uuid.UUID        { return p.id }
-func (p *Post) Title() string        { return p.title }
-func (p *Post) Slug() string         { return p.slug }
-func (p *Post) Description() string  { return p.description }
-func (p *Post) HTMLContent() []byte  { return p.htmlContent }
-func (p *Post) Status() PostStatus   { return p.status }
-func (p *Post) CreatedAt() time.Time { return p.createdAt }
+func (p *Post) Id() uuid.UUID           { return p.id }
+func (p *Post) Title() string           { return p.title }
+func (p *Post) Slug() string            { return p.slug }
+func (p *Post) Description() string     { return p.description }
+func (p *Post) MarkdownContent() []byte { return p.markdownContent }
+func (p *Post) HTMLContent() []byte     { return p.htmlContent }
+func (p *Post) Status() PostStatus      { return p.status }
+func (p *Post) CreatedAt() time.Time    { return p.createdAt }
+func (p *Post) UpdatedAt() time.Time    { return p.updatedAt }
+func (p *Post) ArchivedAt() *time.Time  { return p.archivedAt }
 
 func convertMd2HTML(mdContent []byte) []byte {
 	var buf bytes.Buffer
