@@ -44,14 +44,14 @@ func (a *App) CreatePost(ctx context.Context) (uuid.UUID, error) {
 	return post.Id(), nil
 }
 
-func (a *App) PostPost(ctx context.Context, id uuid.UUID) error {
+func (a *App) PublishPost(ctx context.Context, id uuid.UUID) error {
 	return a.txManager.InTx(ctx, func(ctx context.Context) error {
 		post, err := a.postRepo.GetDomainPostById(ctx, id)
 		if err != nil {
 			return err
 		}
 
-		err = post.Post()
+		err = post.Publish()
 		if err != nil {
 			return err
 		}

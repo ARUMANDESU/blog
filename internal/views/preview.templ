@@ -10,7 +10,7 @@ templ Preview(p PreviewView) {
 				@statusBadge(p.Status)
 			</p>
 			<a class="admin-action" href={ postEditURL(p.ID) }>edit</a>
-			if p.Status != StatusPosted {
+			if p.Status != StatusPublished {
 				<form method="post" action={ postPublishURL(p.ID) }>
 					<button type="submit" class="admin-action admin-action--primary">post it</button>
 				</form>

@@ -24,9 +24,9 @@ type PostView struct {
 
 // Post statuses as the admin views see them; mirrors domain.PostStatus.
 const (
-	StatusDraft    = "draft"
-	StatusPosted   = "posted"
-	StatusArchived = "archived"
+	StatusDraft     = "draft"
+	StatusPublished = "published"
+	StatusArchived  = "archived"
 )
 
 // AdminPost is one row in the admin post list.

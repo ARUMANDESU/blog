@@ -214,7 +214,7 @@ func TestPost_Unarchive(t *testing.T) {
 	assert.False(t, post.updatedAt.Before(prevUpdatedAt))
 }
 
-func TestPost_Post(t *testing.T) {
+func TestPost_Publish(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -243,7 +243,7 @@ func TestPost_Post(t *testing.T) {
 			}
 			prevUpdatedAt := post.updatedAt
 
-			err := post.Post()
+			err := post.Publish()
 
 			if tt.err != nil {
 				require.Error(t, err)
@@ -254,7 +254,7 @@ func TestPost_Post(t *testing.T) {
 			}
 
 			require.NoError(t, err)
-			assert.Equal(t, PostStatusPosted, post.status)
+			assert.Equal(t, PostStatusPublished, post.status)
 			assert.False(t, post.updatedAt.Before(prevUpdatedAt))
 		})
 	}
@@ -267,7 +267,7 @@ func TestPost_Draft(t *testing.T) {
 	require.NoError(t, post.UpdateTitle("test"))
 	require.NoError(t, post.UpdateDescription("test description"))
 	require.NoError(t, post.UpdateSlug("test"))
-	require.NoError(t, post.Post())
+	require.NoError(t, post.Publish())
 	prevUpdatedAt := post.updatedAt
 
 	err := post.Draft()

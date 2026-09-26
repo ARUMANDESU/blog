@@ -35,7 +35,7 @@ templ adminRow(p AdminPost) {
 				updated
 				<time datetime={ machineDate(p.UpdatedAt) }>{ formatDate(p.UpdatedAt) }</time>
 			</span>
-			if p.Status == StatusPosted {
+			if p.Status == StatusPublished {
 				<a href={ templ.SafeURL("/posts/" + p.Slug) }>live &rarr;</a>
 			}
 		</p>

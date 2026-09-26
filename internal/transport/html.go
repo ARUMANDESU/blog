@@ -96,7 +96,7 @@ const placeholderMarkdown = "This is placeholder content standing in for rendere
 
 var placeholderAdminPosts = []views.AdminPost{
 	{ID: "0199a1b2-0000-7000-8000-000000000003", Title: "", Status: views.StatusDraft, UpdatedAt: time.Date(2026, 9, 23, 0, 0, 0, 0, time.UTC)},
-	{ID: "0199a1b2-0000-7000-8000-000000000001", Slug: "hello", Title: "Writing a blog engine in Go", Status: views.StatusPosted, UpdatedAt: time.Date(2026, 9, 21, 0, 0, 0, 0, time.UTC)},
+	{ID: "0199a1b2-0000-7000-8000-000000000001", Slug: "hello", Title: "Writing a blog engine in Go", Status: views.StatusPublished, UpdatedAt: time.Date(2026, 9, 21, 0, 0, 0, 0, time.UTC)},
 	{ID: "0199a1b2-0000-7000-8000-000000000002", Slug: "domain", Title: "Keeping the domain honest", Status: views.StatusArchived, UpdatedAt: time.Date(2026, 9, 14, 0, 0, 0, 0, time.UTC)},
 }
 
@@ -150,7 +150,7 @@ func (h *HTTP) PostPostPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.app.PostPost(r.Context(), id)
+	err = h.app.PublishPost(r.Context(), id)
 	if err != nil {
 		// TODO: handle error
 		return

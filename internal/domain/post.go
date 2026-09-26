@@ -27,9 +27,9 @@ var (
 type PostStatus string
 
 const (
-	PostStatusDraft    = PostStatus("draft")
-	PostStatusPosted   = PostStatus("posted")
-	PostStatusArchived = PostStatus("archived")
+	PostStatusDraft     = PostStatus("draft")
+	PostStatusPublished = PostStatus("posted")
+	PostStatusArchived  = PostStatus("archived")
 )
 
 type Post struct {
@@ -109,7 +109,7 @@ func (p *Post) Unarchive() error {
 	return p.Draft()
 }
 
-func (p *Post) Post() error {
+func (p *Post) Publish() error {
 	var err error
 	if len(p.title) == 0 {
 		err = fmt.Errorf("%w: title must be provided", pkg.ErrPreconditionNotMet)
@@ -125,7 +125,7 @@ func (p *Post) Post() error {
 	}
 
 	p.updatedAt = time.Now().UTC()
-	p.status = PostStatusPosted
+	p.status = PostStatusPublished
 	return nil
 }
 

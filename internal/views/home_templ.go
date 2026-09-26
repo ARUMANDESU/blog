@@ -42,7 +42,7 @@ func Home(posts []PostCard) templ.Component {
 			}
 			ctx = templ.InitializeContext(ctx)
 			if len(posts) == 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<p class=\"empty-state\">nothing posted yet.</p>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<p class=\"empty-state\">nothing published yet.</p>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

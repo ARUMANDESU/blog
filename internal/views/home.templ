@@ -3,7 +3,7 @@ package views
 templ Home(posts []PostCard) {
 	@Base("ARUMANDESU", nil) {
 		if len(posts) == 0 {
-			<p class="empty-state">nothing posted yet.</p>
+			<p class="empty-state">nothing published yet.</p>
 		} else {
 			<ul class="post-list">
 				for _, p := range posts {

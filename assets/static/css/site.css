@@ -590,7 +590,7 @@ main {
 	border-radius: 999px;
 }
 
-.status--posted {
+.status--published {
 	border-color: var(--accent);
 	color: var(--accent);
 }
