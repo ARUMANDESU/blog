@@ -60,8 +60,10 @@ func (a *App) CreatePost(ctx context.Context) (uuid.UUID, error) {
 	return post.Id(), nil
 }
 
-func (a *App) PublishPost(ctx context.Context, id uuid.UUID) error {
-	return a.txManager.InTx(ctx, func(ctx context.Context) error {
+// PublishPost publishes a post and returns its slug
+func (a *App) PublishPost(ctx context.Context, id uuid.UUID) (string, error) {
+	var slug string
+	err := a.txManager.InTx(ctx, func(ctx context.Context) error {
 		post, err := a.PostRepo.GetDomainPostById(ctx, id)
 		if err != nil {
 			return err
@@ -71,6 +73,7 @@ func (a *App) PublishPost(ctx context.Context, id uuid.UUID) error {
 		if err != nil {
 			return err
 		}
+		slug = post.Slug()
 
 		err = a.PostRepo.UpdatePost(ctx, post)
 		if err != nil {
@@ -78,6 +81,7 @@ func (a *App) PublishPost(ctx context.Context, id uuid.UUID) error {
 		}
 		return nil
 	})
+	return slug, err
 }
 
 func (a *App) UpdateTitle(ctx context.Context, id uuid.UUID, title string) error {

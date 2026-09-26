@@ -45,6 +45,8 @@ templ adminRow(p AdminPost) {
 		<a class="admin-action" href={ postPreviewURL(p.ID) }>preview</a>
 		if p.Status != StatusArchived {
 			@archiveForm(p.ID, "admin-action admin-action--danger")
+		} else {
+			@unarchiveForm(p.ID, "admin-action admin-action--danger")
 		}
 	</div>
 }
@@ -56,5 +58,11 @@ templ statusBadge(status string) {
 templ archiveForm(id string, class string) {
 	<form method="post" action={ postArchiveURL(id) } onsubmit="return confirm('Archive this post?')">
 		<button type="submit" class={ class }>archive</button>
+	</form>
+}
+
+templ unarchiveForm(id string, class string) {
+	<form method="post" action={ postUnarchiveURL(id) } onsubmit="return confirm('Unarchive this post?')">
+		<button type="submit" class={ class }>unarchive</button>
 	</form>
 }

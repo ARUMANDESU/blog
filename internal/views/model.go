@@ -67,6 +67,10 @@ func postArchiveURL(id string) templ.SafeURL {
 	return templ.SafeURL("/posts/" + id + "/archive")
 }
 
+func postUnarchiveURL(id string) templ.SafeURL {
+	return templ.SafeURL("/posts/" + id + "/unarchive")
+}
+
 // titleOrUntitled keeps freshly created, still empty drafts clickable.
 func titleOrUntitled(title string) string {
 	if title == "" {

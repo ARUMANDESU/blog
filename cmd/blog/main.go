@@ -6,7 +6,10 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/arumandesu/blog/internal/app"
+	"github.com/arumandesu/blog/internal/repository"
 	"github.com/arumandesu/blog/internal/transport"
+	"github.com/arumandesu/blog/pkg"
 )
 
 func main() {
@@ -24,8 +27,11 @@ func main() {
 		}
 	}
 
+	postRepo := repository.NewInMemoryPostRepo()
+	a := app.New(&pkg.NoOpTxManager{}, postRepo, postRepo)
+
 	mux := http.NewServeMux()
-	h := &transport.HTTP{}
+	h := transport.NewHTTP(a, logger)
 	transport.Handle(mux, h)
 
 	err := http.ListenAndServe(":8080", mux)
