@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"mime"
 	"net/http"
@@ -28,6 +29,10 @@ func main() {
 	}
 
 	postRepo := repository.NewInMemoryPostRepo()
+	if err := seed(context.Background(), postRepo); err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
 	a := app.New(&pkg.NoOpTxManager{}, postRepo, postRepo)
 
 	mux := http.NewServeMux()
