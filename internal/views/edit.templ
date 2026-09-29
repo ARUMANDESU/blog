@@ -12,9 +12,20 @@ templ Edit(p PostEdit) {
 			placeholder="Title..."
 			hx-trigger="keyup changed delay:700ms"
 			hx-patch={ postIdXURL(p.ID, "title") }
-			hx-swap="none"
+			hx-target="#title-status"
+			hx-swap="outerHTML"
+			hx-indicator="#title-saving"
 			value={ p.Title }
 		/>
+		<span id="title-saving" class="htmx-indicator">Saving...</span>
+		@Span("title-status", "", "")
+		@SlugInput(p.Slug, false)
+		<button
+			type="button"
+			hx-patch={ postIdXURL(p.ID, "slug") }
+			hx-include="#slug"
+			hx-swap="none"
+		>Save Slug</button>
 		<textarea
 			id="description"
 			type="text"
@@ -52,4 +63,19 @@ templ editHead() {
 	// gruvbox skin — must come after easymde's own sheet
 	<link rel="stylesheet" href="/static/css/editor.css"/>
 	<script src="/static/js/easymde.min.js"></script>
+}
+
+templ SlugInput(slug string, isobb bool) {
+	<input
+		id="slug"
+		type="text"
+		name="slug"
+		placeholder="Slug..."
+		value={ slug }
+		hx-swap-oob={ isobb }
+	/>
+}
+
+templ Span(id, value, class string) {
+	<span id={ id } class={ class }>{ value }</span>
 }

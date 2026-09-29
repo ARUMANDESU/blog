@@ -2,11 +2,13 @@ package app
 
 import (
 	"context"
+	"strings"
 	"time"
 	"uuid"
 
 	"github.com/arumandesu/blog/internal/domain"
 	"github.com/arumandesu/blog/pkg"
+	slugx "github.com/gosimple/slug"
 )
 
 type PostRepo interface {
@@ -104,8 +106,10 @@ func (a *App) UnpublishPost(ctx context.Context, id uuid.UUID) (string, error) {
 	return slug, err
 }
 
-func (a *App) UpdateTitle(ctx context.Context, id uuid.UUID, title string) error {
-	return a.txManager.InTx(ctx, func(ctx context.Context) error {
+// UpdateTitle updates title and slug, returns slug
+func (a *App) UpdateTitle(ctx context.Context, id uuid.UUID, title string) (string, error) {
+	var slug string
+	err := a.txManager.InTx(ctx, func(ctx context.Context) error {
 		post, err := a.PostRepo.GetDomainPostById(ctx, id)
 		if err != nil {
 			return err
@@ -117,6 +121,52 @@ func (a *App) UpdateTitle(ctx context.Context, id uuid.UUID, title string) error
 		}
 
 		// TODO: update slug, if status is published then we should redirect old slug link into new one
+		slug = truncateSlug(slugx.Make(title))
+		if slug == "" {
+			slug = post.Slug()
+		} else {
+			err = post.UpdateSlug(slug)
+			if err != nil {
+				return err
+			}
+		}
+
+		err = a.PostRepo.UpdatePost(ctx, post)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	return slug, err
+}
+
+const slugMaxLen = 45
+
+// truncateSlug cuts slug to slugMaxLen and drops dashes left dangling by the cut
+func truncateSlug(slug string) string {
+	if len(slug) > slugMaxLen {
+		slug = strings.Trim(slug[:slugMaxLen], "-")
+	}
+	return slug
+}
+
+func (a *App) UpdateSlug(ctx context.Context, id uuid.UUID, slug string) error {
+	return a.txManager.InTx(ctx, func(ctx context.Context) error {
+		post, err := a.PostRepo.GetDomainPostById(ctx, id)
+		if err != nil {
+			return err
+		}
+
+		if !slugx.IsSlug(slug) {
+			return pkg.NewFieldError("slug", "invalid slug", domain.ErrInvalidSlug)
+		}
+
+		// TODO: update slug, if status is published then we should redirect old slug link into new one
+		slug = truncateSlug(slug)
+		err = post.UpdateSlug(slug)
+		if err != nil {
+			return err
+		}
 
 		err = a.PostRepo.UpdatePost(ctx, post)
 		if err != nil {

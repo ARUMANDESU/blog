@@ -44,6 +44,7 @@ func Handle(mux *http.ServeMux, h *HTTP) {
 	mux.HandleFunc("PATCH /posts/{id}/title", h.PatchPostTitle)
 	mux.HandleFunc("PATCH /posts/{id}/description", h.PatchPostDescription)
 	mux.HandleFunc("PATCH /posts/{id}/content", h.PatchPostContent)
+	mux.HandleFunc("PATCH /posts/{id}/slug", h.PatchPostSlug)
 }
 
 func (h *HTTP) GetHome(w http.ResponseWriter, r *http.Request) {
@@ -231,13 +232,14 @@ func (h *HTTP) PatchPostTitle(w http.ResponseWriter, r *http.Request) {
 	title := r.FormValue("title")
 	title = strings.TrimSpace(title)
 
-	err = h.app.UpdateTitle(r.Context(), id, title)
+	slug, err := h.app.UpdateTitle(r.Context(), id, title)
 	if err != nil {
 		h.writeError(w, r, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	_ = views.Span("title-status", "Saved", "saved").Render(r.Context(), w)
+	_ = views.SlugInput(slug, true).Render(r.Context(), w)
 }
 
 func (h *HTTP) PatchPostDescription(w http.ResponseWriter, r *http.Request) {
@@ -257,6 +259,31 @@ func (h *HTTP) PatchPostDescription(w http.ResponseWriter, r *http.Request) {
 	description = strings.TrimSpace(description)
 
 	err = h.app.UpdateDescription(r.Context(), id, description)
+	if err != nil {
+		h.writeError(w, r, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *HTTP) PatchPostSlug(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	err = r.ParseForm()
+	if err != nil {
+		h.writeError(w, r, err)
+		return
+	}
+
+	slug := r.FormValue("slug")
+	slug = strings.TrimSpace(slug)
+
+	err = h.app.UpdateSlug(r.Context(), id, slug)
 	if err != nil {
 		h.writeError(w, r, err)
 		return
@@ -291,7 +318,8 @@ func (h *HTTP) writeError(w http.ResponseWriter, r *http.Request, err error) {
 		errors.Is(err, pkg.ErrEmpty),
 		errors.Is(err, pkg.ErrExceedsMax),
 		errors.Is(err, pkg.ErrBelowMin),
-		errors.Is(err, pkg.ErrInvalidInput):
+		errors.Is(err, pkg.ErrInvalidInput),
+		errors.Is(err, domain.ErrInvalidSlug):
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 	default:
 		h.logger.ErrorContext(r.Context(), "internal error",
