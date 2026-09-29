@@ -49,7 +49,6 @@ type Post struct {
 	Status          domain.PostStatus
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
-	ArchivedAt      *time.Time
 }
 
 func (a *App) CreatePost(ctx context.Context) (uuid.UUID, error) {

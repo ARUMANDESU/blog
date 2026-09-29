@@ -163,6 +163,5 @@ func toAppPost(p *domain.Post) app.Post {
 		Status:          p.Status(),
 		CreatedAt:       p.CreatedAt(),
 		UpdatedAt:       p.UpdatedAt(),
-		ArchivedAt:      p.ArchivedAt(),
 	}
 }

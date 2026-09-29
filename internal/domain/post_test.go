@@ -25,7 +25,6 @@ func TestCreatePost(t *testing.T) {
 	assert.Equal(t, PostStatusDraft, post.status)
 	assert.WithinDuration(t, time.Now().UTC(), post.createdAt, time.Second)
 	assert.Equal(t, post.createdAt, post.updatedAt)
-	assert.Nil(t, post.archivedAt)
 }
 
 func TestPost_UpdateTitle(t *testing.T) {
@@ -193,9 +192,6 @@ func TestPost_Archive(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, PostStatusArchived, post.status)
-	require.NotNil(t, post.archivedAt)
-	assert.WithinDuration(t, time.Now().UTC(), *post.archivedAt, time.Second)
-	assert.Equal(t, *post.archivedAt, post.updatedAt)
 	assert.False(t, post.updatedAt.Before(prevUpdatedAt))
 }
 
@@ -209,7 +205,6 @@ func TestPost_Unarchive(t *testing.T) {
 	post.Unarchive()
 
 	assert.Equal(t, PostStatusDraft, post.status)
-	assert.Nil(t, post.archivedAt)
 	assert.False(t, post.updatedAt.Before(prevUpdatedAt))
 }
 

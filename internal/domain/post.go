@@ -42,7 +42,6 @@ type Post struct {
 	status          PostStatus
 	createdAt       time.Time
 	updatedAt       time.Time
-	archivedAt      *time.Time
 }
 
 func NewID() uuid.UUID {
@@ -52,11 +51,10 @@ func NewID() uuid.UUID {
 func CreatePost() *Post {
 	now := time.Now().UTC()
 	return &Post{
-		id:         NewID(),
-		status:     PostStatusDraft,
-		createdAt:  now,
-		updatedAt:  now,
-		archivedAt: nil,
+		id:        NewID(),
+		status:    PostStatusDraft,
+		createdAt: now,
+		updatedAt: now,
 	}
 }
 
@@ -98,14 +96,11 @@ func (p *Post) UpdateContent(mdContent []byte) error {
 }
 
 func (p *Post) Archive() error {
-	now := time.Now().UTC()
-	p.updatedAt = now
-	p.archivedAt = &now
+	p.updatedAt = time.Now().UTC()
 	p.status = PostStatusArchived
 	return nil
 }
 func (p *Post) Unarchive() {
-	p.archivedAt = nil
 	p.Draft()
 }
 
@@ -148,7 +143,6 @@ func (p *Post) HTMLContent() []byte     { return p.htmlContent }
 func (p *Post) Status() PostStatus      { return p.status }
 func (p *Post) CreatedAt() time.Time    { return p.createdAt }
 func (p *Post) UpdatedAt() time.Time    { return p.updatedAt }
-func (p *Post) ArchivedAt() *time.Time  { return p.archivedAt }
 
 func convertMd2HTML(mdContent []byte) []byte {
 	var buf bytes.Buffer
