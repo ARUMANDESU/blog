@@ -837,33 +837,64 @@ html:has(.guest-stage) {
 	}
 }
 
-main > :not(.preview-panel) {
+main> :not(.preview-panel) {
 	animation: rise 0.45s var(--ease-out) both;
 }
 
-main > :nth-child(2) {
+main> :nth-child(2) {
 	animation-delay: 0.05s;
 }
 
-main > :nth-child(3) {
+main> :nth-child(3) {
 	animation-delay: 0.1s;
 }
 
 /* lists cascade in, capped so long lists don't take forever */
-.post-list > li,
-.admin-list > .admin-row {
+.post-list>li,
+.admin-list>.admin-row {
 	animation: rise 0.45s var(--ease-out) both;
 	animation-delay: calc(min(var(--i, 0), 8) * 45ms + 80ms);
 }
 
-.post-list > li:nth-child(1), .admin-list > .admin-row:nth-child(1) { --i: 0; }
-.post-list > li:nth-child(2), .admin-list > .admin-row:nth-child(2) { --i: 1; }
-.post-list > li:nth-child(3), .admin-list > .admin-row:nth-child(3) { --i: 2; }
-.post-list > li:nth-child(4), .admin-list > .admin-row:nth-child(4) { --i: 3; }
-.post-list > li:nth-child(5), .admin-list > .admin-row:nth-child(5) { --i: 4; }
-.post-list > li:nth-child(6), .admin-list > .admin-row:nth-child(6) { --i: 5; }
-.post-list > li:nth-child(7), .admin-list > .admin-row:nth-child(7) { --i: 6; }
-.post-list > li:nth-child(n + 8), .admin-list > .admin-row:nth-child(n + 8) { --i: 7; }
+.post-list>li:nth-child(1),
+.admin-list>.admin-row:nth-child(1) {
+	--i: 0;
+}
+
+.post-list>li:nth-child(2),
+.admin-list>.admin-row:nth-child(2) {
+	--i: 1;
+}
+
+.post-list>li:nth-child(3),
+.admin-list>.admin-row:nth-child(3) {
+	--i: 2;
+}
+
+.post-list>li:nth-child(4),
+.admin-list>.admin-row:nth-child(4) {
+	--i: 3;
+}
+
+.post-list>li:nth-child(5),
+.admin-list>.admin-row:nth-child(5) {
+	--i: 4;
+}
+
+.post-list>li:nth-child(6),
+.admin-list>.admin-row:nth-child(6) {
+	--i: 5;
+}
+
+.post-list>li:nth-child(7),
+.admin-list>.admin-row:nth-child(7) {
+	--i: 6;
+}
+
+.post-list>li:nth-child(n + 8),
+.admin-list>.admin-row:nth-child(n + 8) {
+	--i: 7;
+}
 
 .post-card:active {
 	transform: translateY(0) scale(0.99);
