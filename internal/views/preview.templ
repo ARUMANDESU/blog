@@ -11,12 +11,24 @@ templ Preview(p PreviewView) {
 			</p>
 			<a class="admin-action" href={ postEditURL(p.ID) }>edit</a>
 			if p.Status != StatusPublished {
-				<form method="post" action={ postPublishURL(p.ID) }>
-					<button type="submit" class="admin-action admin-action--primary">post it</button>
-				</form>
+				<button
+					type="button"
+					hx-post={ postPublishURL(p.ID) }
+					class="admin-action admin-action--primary"
+					hx-swap="none"
+				>publish</button>
+			} else {
+				<button
+					type="button"
+					hx-post={ postUnpublishURL(p.ID) }
+					class="admin-action admin-action--danger"
+					hx-swap="none"
+				>unpublish</button>
 			}
 			if p.Status != StatusArchived {
-				@archiveForm(p.ID, "admin-action admin-action--danger")
+				@archiveBtn(p.ID, "admin-action admin-action--danger")
+			} else {
+				@unarchiveBtn(p.ID, "admin-action admin-action--danger")
 			}
 			<a class="admin-action" href="/admin">&larr; all posts</a>
 		</aside>
