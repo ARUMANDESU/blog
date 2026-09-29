@@ -25,7 +25,7 @@ Use this naming template: `0001-<name>.md`
 Don't edit old decisions when you change your mind. Instead create new decision and set old one's status to `Superseded by 0007` and add `-spsd` into it's file name: `0001-<name>-spsd.md`
 
 ## Features
-- [ ] Markdown format support
+- [x] Markdown format support
 - [ ] Telegram Instant View support
 - [ ] Uploading media
 - [ ] RSS
