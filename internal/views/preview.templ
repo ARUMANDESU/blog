@@ -16,6 +16,8 @@ templ Preview(p PreviewView) {
 					hx-post={ postPublishURL(p.ID) }
 					class="admin-action admin-action--primary"
 					hx-swap="none"
+					hx-disabled-elt="this"
+					data-flash="published — it's live"
 				>publish</button>
 			} else {
 				<button
@@ -23,6 +25,9 @@ templ Preview(p PreviewView) {
 					hx-post={ postUnpublishURL(p.ID) }
 					class="admin-action admin-action--danger"
 					hx-swap="none"
+					hx-confirm="Unpublish this post? It goes back to draft."
+					hx-disabled-elt="this"
+					data-flash="unpublished — back to draft"
 				>unpublish</button>
 			}
 			if p.Status != StatusArchived {

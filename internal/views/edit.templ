@@ -1,61 +1,108 @@
 package views
 
+// Edit autosaves every field. Each input carries data-field; site.js watches
+// htmx's request lifecycle on those and drives the matching .field-status
+// and the page-level save state in the edit bar.
 templ Edit(p PostEdit) {
 	@Base("Edit", editHead()) {
 		<div class="edit-bar">
 			<a class="back-link" href="/admin">&larr; all posts</a>
-			<a class="admin-action" href={ postPreviewURL(p.ID) }>preview</a>
+			<span id="save-state" class="save-state" data-state="idle" role="status" aria-live="polite">all changes saved</span>
+			<a class="admin-action" href={ postPreviewURL(p.ID) }>preview &rarr;</a>
 		</div>
-		<input
-			type="text"
-			name="title"
-			placeholder="Title..."
-			hx-trigger="keyup changed delay:700ms"
-			hx-patch={ postIdXURL(p.ID, "title") }
-			hx-target="#title-status"
-			hx-swap="outerHTML"
-			hx-indicator="#title-saving"
-			value={ p.Title }
-		/>
-		<span id="title-saving" class="htmx-indicator">Saving...</span>
-		@Span("title-status", "", "")
-		@SlugInput(p.Slug, false)
-		<button
-			type="button"
-			hx-patch={ postIdXURL(p.ID, "slug") }
-			hx-include="#slug"
-			hx-swap="none"
-		>Save Slug</button>
-		<textarea
-			id="description"
-			type="text"
-			name="description"
-			placeholder="Description..."
-		>{ p.Description }</textarea>
-		<button
-			type="button"
-			hx-patch={ postIdXURL(p.ID, "description") }
-			hx-include="#description"
-			hx-swap="none"
-		>Save Description</button>
-		<textarea
-			id="markdown-content"
-			name="markdown-content"
-			placeholder="Markdown Content..."
-		>{ p.MarkdownContent }</textarea>
-		<button
-			type="button"
-			hx-patch={ postIdXURL(p.ID, "content") }
-			hx-include="#markdown-content"
-			hx-swap="none"
-		>Save Content</button>
+		<div class="edit-form">
+			<div class="field">
+				<div class="field__head">
+					<label for="title">title</label>
+					@fieldStatus("title")
+				</div>
+				<input
+					id="title"
+					class="field__input field__input--title"
+					type="text"
+					name="title"
+					placeholder="Untitled"
+					autocomplete="off"
+					data-field="title"
+					hx-trigger="input changed delay:700ms, save-now"
+					hx-patch={ postIdXURL(p.ID, "title") }
+					hx-swap="none"
+					hx-sync="this:replace"
+					value={ p.Title }
+				/>
+			</div>
+			<div class="field">
+				<div class="field__head">
+					<label for="slug">slug</label>
+					@fieldStatus("slug")
+				</div>
+				<div class="slug-input">
+					<span class="slug-input__prefix" aria-hidden="true">/posts/</span>
+					@SlugInput(p.ID, p.Slug, false)
+				</div>
+				<p class="field__hint">follows the title until you set it here; saves when you leave the field.</p>
+			</div>
+			<div class="field">
+				<div class="field__head">
+					<label for="description">description</label>
+					@fieldStatus("description")
+				</div>
+				<textarea
+					id="description"
+					class="field__input"
+					name="description"
+					rows="3"
+					maxlength="300"
+					placeholder="One or two sentences for the post card..."
+					data-field="description"
+					data-counter="description-count"
+					hx-trigger="input changed delay:900ms, save-now"
+					hx-patch={ postIdXURL(p.ID, "description") }
+					hx-swap="none"
+					hx-sync="this:replace"
+				>{ p.Description }</textarea>
+				<p class="field__hint field__hint--end"><span id="description-count">0</span>/300</p>
+			</div>
+			<div class="field">
+				<div class="field__head">
+					<label for="markdown-content">content</label>
+					@fieldStatus("content")
+				</div>
+				<textarea
+					id="markdown-content"
+					name="markdown-content"
+					placeholder="Write in markdown..."
+					data-field="content"
+					hx-trigger="mde-change delay:1200ms, save-now"
+					hx-patch={ postIdXURL(p.ID, "content") }
+					hx-swap="none"
+					hx-sync="this:replace"
+				>{ p.MarkdownContent }</textarea>
+			</div>
+			<p class="field__hint">autosaves as you type &middot; <kbd>ctrl</kbd>/<kbd>&#8984;</kbd> + <kbd>s</kbd> saves now</p>
+		</div>
 		<script>
-			const easyMDE = new EasyMDE({
-			    element: document.getElementById("markdown-content"),
-			    forceSync: true,
-			});
+			(() => {
+				const area = document.getElementById("markdown-content");
+				const easyMDE = new EasyMDE({
+					element: area,
+					forceSync: true,
+					spellChecker: false,
+					status: ["lines", "words"],
+					minHeight: "320px",
+				});
+				// the textarea is hidden behind CodeMirror; relay edits so htmx sees them
+				easyMDE.codemirror.on("change", () => {
+					area.dispatchEvent(new Event("input", { bubbles: true }));
+					area.dispatchEvent(new Event("mde-change"));
+				});
+			})();
 		</script>
 	}
+}
+
+templ fieldStatus(field string) {
+	<span class="field-status" data-status-for={ field } aria-live="polite"></span>
 }
 
 templ editHead() {
@@ -65,17 +112,22 @@ templ editHead() {
 	<script src="/static/js/easymde.min.js"></script>
 }
 
-templ SlugInput(slug string, isobb bool) {
+// SlugInput is also sent out-of-band after a title save, since the slug
+// follows the title.
+templ SlugInput(id, slug string, isoob bool) {
 	<input
 		id="slug"
+		class="field__input slug-input__field"
 		type="text"
 		name="slug"
-		placeholder="Slug..."
+		placeholder="post-slug"
+		autocomplete="off"
+		spellcheck="false"
+		data-field="slug"
+		hx-trigger="change, save-now"
+		hx-patch={ postIdXURL(id, "slug") }
+		hx-swap="none"
 		value={ slug }
-		hx-swap-oob={ isobb }
+		hx-swap-oob={ isoob }
 	/>
-}
-
-templ Span(id, value, class string) {
-	<span id={ id } class={ class }>{ value }</span>
 }

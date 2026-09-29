@@ -21,6 +21,7 @@ templ Base(title string, head templ.Component) {
 			<link rel="stylesheet" href="/static/css/bamboo.min.css"/>
 			<link rel="stylesheet" href="/static/css/site.css"/>
 			<script defer src="/static/js/htmx.min.js"></script>
+			<script defer src="/static/js/site.js"></script>
 			// favicon
 			<link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png"/>
 			<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png"/>
@@ -36,6 +37,17 @@ templ Base(title string, head templ.Component) {
 				{ children... }
 			</main>
 			@Footer()
+			// feedback chrome, driven by site.js
+			<div class="toasts" id="toasts" role="region" aria-label="notifications" aria-live="polite"></div>
+			<dialog class="confirm" id="confirm">
+				<form method="dialog">
+					<p class="confirm__msg"></p>
+					<div class="confirm__actions">
+						<button class="admin-action" value="cancel">cancel</button>
+						<button class="admin-action admin-action--primary" value="ok">confirm</button>
+					</div>
+				</form>
+			</dialog>
 		</body>
 	</html>
 }

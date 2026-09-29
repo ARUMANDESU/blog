@@ -6,7 +6,7 @@ templ Admin(posts []AdminPost) {
 			<h1 class="admin-head__title">posts</h1>
 			<div class="admin-head__actions">
 				<a class="admin-action" href="/admin/guest">guest view</a>
-				<button type="button" hx-post="/posts" hx-swap="none">+ new post</button>
+				<button type="button" class="admin-action admin-action--primary" hx-post="/posts" hx-swap="none" hx-disabled-elt="this" data-flash="new draft created">+ new post</button>
 			</div>
 		</div>
 		if len(posts) == 0 {
@@ -59,6 +59,8 @@ templ archiveBtn(id string, class string) {
 		hx-post={ postArchiveURL(id) }
 		hx-confirm="Archive this post?"
 		hx-swap="none"
+		hx-disabled-elt="this"
+		data-flash="post archived"
 	>archive</button>
 }
 
@@ -69,5 +71,7 @@ templ unarchiveBtn(id string, class string) {
 		hx-post={ postUnarchiveURL(id) }
 		hx-confirm="Unarchive this post?"
 		hx-swap="none"
+		hx-disabled-elt="this"
+		data-flash="post restored to drafts"
 	>unarchive</button>
 }

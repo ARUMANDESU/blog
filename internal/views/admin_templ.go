@@ -41,7 +41,7 @@ func Admin(posts []AdminPost) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"admin-head\"><h1 class=\"admin-head__title\">posts</h1><div class=\"admin-head__actions\"><a class=\"admin-action\" href=\"/admin/guest\">guest view</a> <button type=\"button\" hx-post=\"/posts\" hx-swap=\"none\">+ new post</button></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"admin-head\"><h1 class=\"admin-head__title\">posts</h1><div class=\"admin-head__actions\"><a class=\"admin-action\" href=\"/admin/guest\">guest view</a> <button type=\"button\" class=\"admin-action admin-action--primary\" hx-post=\"/posts\" hx-swap=\"none\" hx-disabled-elt=\"this\" data-flash=\"new draft created\">+ new post</button></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -349,7 +349,7 @@ func archiveBtn(id string, class string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\" hx-confirm=\"Archive this post?\" hx-swap=\"none\">archive</button>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\" hx-confirm=\"Archive this post?\" hx-swap=\"none\" hx-disabled-elt=\"this\" data-flash=\"post archived\">archive</button>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -403,13 +403,13 @@ func unarchiveBtn(id string, class string) templ.Component {
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.ResolveAttributeValue(postUnarchiveURL(id))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/admin.templ`, Line: 69, Col: 32}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/admin.templ`, Line: 71, Col: 32}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var22)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\" hx-confirm=\"Unarchive this post?\" hx-swap=\"none\">unarchive</button>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\" hx-confirm=\"Unarchive this post?\" hx-swap=\"none\" hx-disabled-elt=\"this\" data-flash=\"post restored to drafts\">unarchive</button>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

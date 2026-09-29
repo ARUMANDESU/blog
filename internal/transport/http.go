@@ -238,8 +238,7 @@ func (h *HTTP) PatchPostTitle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = views.Span("title-status", "Saved", "saved").Render(r.Context(), w)
-	_ = views.SlugInput(slug, true).Render(r.Context(), w)
+	_ = views.SlugInput(id.String(), slug, true).Render(r.Context(), w)
 }
 
 func (h *HTTP) PatchPostDescription(w http.ResponseWriter, r *http.Request) {
