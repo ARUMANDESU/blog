@@ -39,6 +39,7 @@ func Handle(mux *http.ServeMux, h *HTTP) {
 	mux.HandleFunc("POST /posts/{id}/archive", h.PostArchivePost)
 	mux.HandleFunc("POST /posts/{id}/unarchive", h.PostUnarchivePost)
 	mux.HandleFunc("POST /posts/{id}/publish", h.PostPublishPost)
+	mux.HandleFunc("POST /posts/{id}/unpublish", h.PostUnpublishPost)
 
 	mux.HandleFunc("PATCH /posts/{id}/title", h.PatchPostTitle)
 	mux.HandleFunc("PATCH /posts/{id}/description", h.PatchPostDescription)
@@ -140,6 +141,23 @@ func (h *HTTP) PostPublishPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	redirect(w, r, fmt.Sprintf("/posts/%s", slug))
+}
+
+func (h *HTTP) PostUnpublishPost(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	_, err = h.app.UnpublishPost(r.Context(), id)
+	if err != nil {
+		h.writeError(w, r, err)
+		return
+	}
+
+	w.Header().Set("HX-Refresh", "true")
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *HTTP) PostArchivePost(w http.ResponseWriter, r *http.Request) {

@@ -84,6 +84,26 @@ func (a *App) PublishPost(ctx context.Context, id uuid.UUID) (string, error) {
 	return slug, err
 }
 
+func (a *App) UnpublishPost(ctx context.Context, id uuid.UUID) (string, error) {
+	var slug string
+	err := a.txManager.InTx(ctx, func(ctx context.Context) error {
+		post, err := a.PostRepo.GetDomainPostById(ctx, id)
+		if err != nil {
+			return err
+		}
+
+		post.Unpublish()
+		slug = post.Slug()
+
+		err = a.PostRepo.UpdatePost(ctx, post)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	return slug, err
+}
+
 func (a *App) UpdateTitle(ctx context.Context, id uuid.UUID, title string) error {
 	return a.txManager.InTx(ctx, func(ctx context.Context) error {
 		post, err := a.PostRepo.GetDomainPostById(ctx, id)
@@ -173,10 +193,7 @@ func (a *App) UnarchivePost(ctx context.Context, id uuid.UUID) error {
 			return err
 		}
 
-		err = post.Unarchive()
-		if err != nil {
-			return err
-		}
+		post.Unarchive()
 
 		err = a.PostRepo.UpdatePost(ctx, post)
 		if err != nil {

@@ -104,9 +104,9 @@ func (p *Post) Archive() error {
 	p.status = PostStatusArchived
 	return nil
 }
-func (p *Post) Unarchive() error {
+func (p *Post) Unarchive() {
 	p.archivedAt = nil
-	return p.Draft()
+	p.Draft()
 }
 
 func (p *Post) Publish() error {
@@ -129,10 +129,14 @@ func (p *Post) Publish() error {
 	return nil
 }
 
-func (p *Post) Draft() error {
+func (p *Post) Unpublish() {
 	p.updatedAt = time.Now().UTC()
 	p.status = PostStatusDraft
-	return nil
+}
+
+func (p *Post) Draft() {
+	p.updatedAt = time.Now().UTC()
+	p.status = PostStatusDraft
 }
 
 func (p *Post) Id() uuid.UUID           { return p.id }

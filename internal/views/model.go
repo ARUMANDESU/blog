@@ -75,6 +75,10 @@ func postPublishURL(id string) templ.SafeURL {
 	return templ.SafeURL("/posts/" + id + "/publish")
 }
 
+func postUnpublishURL(id string) templ.SafeURL {
+	return templ.SafeURL("/posts/" + id + "/unpublish")
+}
+
 func postArchiveURL(id string) templ.SafeURL {
 	return templ.SafeURL("/posts/" + id + "/archive")
 }

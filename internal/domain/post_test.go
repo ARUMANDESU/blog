@@ -206,9 +206,8 @@ func TestPost_Unarchive(t *testing.T) {
 	require.NoError(t, post.Archive())
 	prevUpdatedAt := post.updatedAt
 
-	err := post.Unarchive()
+	post.Unarchive()
 
-	require.NoError(t, err)
 	assert.Equal(t, PostStatusDraft, post.status)
 	assert.Nil(t, post.archivedAt)
 	assert.False(t, post.updatedAt.Before(prevUpdatedAt))
@@ -270,9 +269,23 @@ func TestPost_Draft(t *testing.T) {
 	require.NoError(t, post.Publish())
 	prevUpdatedAt := post.updatedAt
 
-	err := post.Draft()
+	post.Draft()
 
-	require.NoError(t, err)
+	assert.Equal(t, PostStatusDraft, post.status)
+	assert.False(t, post.updatedAt.Before(prevUpdatedAt))
+}
+func TestPost_Unpublish(t *testing.T) {
+	t.Parallel()
+
+	post := CreatePost()
+	require.NoError(t, post.UpdateTitle("test"))
+	require.NoError(t, post.UpdateDescription("test description"))
+	require.NoError(t, post.UpdateSlug("test"))
+	require.NoError(t, post.Publish())
+	prevUpdatedAt := post.updatedAt
+
+	post.Unpublish()
+
 	assert.Equal(t, PostStatusDraft, post.status)
 	assert.False(t, post.updatedAt.Before(prevUpdatedAt))
 }
