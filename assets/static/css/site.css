@@ -1165,7 +1165,14 @@ textarea.field__input {
 	font-family: var(--b-font-mono);
 	font-size: 0.9375rem;
 	color: var(--muted);
+	white-space: nowrap;
+	flex-shrink: 0;
 	user-select: none;
+}
+
+.slug-input .slug-input__field {
+	flex: 1;
+	min-width: 0;
 }
 
 .slug-input .slug-input__field,
