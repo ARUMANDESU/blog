@@ -36,10 +36,13 @@ func Handle(mux *http.ServeMux, h *HTTP) {
 	mux.HandleFunc("GET /posts/{id}/preview", h.GetPostPreview)
 
 	mux.HandleFunc("POST /posts", h.PostCreatePost)
-	mux.HandleFunc("POST /posts/{id}/edit", h.PostEditPost)
 	mux.HandleFunc("POST /posts/{id}/archive", h.PostArchivePost)
 	mux.HandleFunc("POST /posts/{id}/unarchive", h.PostUnarchivePost)
 	mux.HandleFunc("POST /posts/{id}/publish", h.PostPublishPost)
+
+	mux.HandleFunc("PATCH /posts/{id}/title", h.PatchPostTitle)
+	mux.HandleFunc("PATCH /posts/{id}/description", h.PatchPostDescription)
+	mux.HandleFunc("PATCH /posts/{id}/content", h.PatchPostContent)
 }
 
 func (h *HTTP) GetHome(w http.ResponseWriter, r *http.Request) {
@@ -80,7 +83,7 @@ func (h *HTTP) GetPostEdit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = views.Edit(post.ID.String(), string(post.MarkdownContent)).Render(r.Context(), w)
+	_ = views.Edit(toPostEdit(post)).Render(r.Context(), w)
 }
 
 func (h *HTTP) GetPostPreview(w http.ResponseWriter, r *http.Request) {
@@ -170,21 +173,78 @@ func (h *HTTP) PostUnarchivePost(w http.ResponseWriter, r *http.Request) {
 
 	redirect(w, r, "/admin")
 }
-func (h *HTTP) PostEditPost(w http.ResponseWriter, r *http.Request) {
+func (h *HTTP) PatchPostContent(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(r.PathValue("id"))
 	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
-	// TODO: read from body
 
-	err = h.app.UpdateContent(r.Context(), id, nil)
+	err = r.ParseForm()
 	if err != nil {
 		h.writeError(w, r, err)
 		return
 	}
 
-	// TODO: update edit page
+	content := r.FormValue("markdown-content")
+
+	err = h.app.UpdateContent(r.Context(), id, []byte(content))
+	if err != nil {
+		h.writeError(w, r, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *HTTP) PatchPostTitle(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	err = r.ParseForm()
+	if err != nil {
+		h.writeError(w, r, err)
+		return
+	}
+
+	title := r.FormValue("title")
+	title = strings.TrimSpace(title)
+
+	err = h.app.UpdateTitle(r.Context(), id, title)
+	if err != nil {
+		h.writeError(w, r, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *HTTP) PatchPostDescription(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	err = r.ParseForm()
+	if err != nil {
+		h.writeError(w, r, err)
+		return
+	}
+
+	description := r.FormValue("description")
+	description = strings.TrimSpace(description)
+
+	err = h.app.UpdateDescription(r.Context(), id, description)
+	if err != nil {
+		h.writeError(w, r, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 // redirect sends the client to url after a successful POST. htmx requests

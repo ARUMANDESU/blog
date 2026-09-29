@@ -1,14 +1,48 @@
 package views
 
-templ Edit(postID string, mdContent string) {
+templ Edit(p PostEdit) {
 	@Base("Edit", editHead()) {
 		<div class="edit-bar">
 			<a class="back-link" href="/admin">&larr; all posts</a>
-			<a class="admin-action" href={ postPreviewURL(postID) }>preview</a>
+			<a class="admin-action" href={ postPreviewURL(p.ID) }>preview</a>
 		</div>
-		<textarea>{ mdContent }</textarea>
+		<input
+			type="text"
+			name="title"
+			placeholder="Title..."
+			hx-trigger="keyup changed delay:700ms"
+			hx-patch={ postIdXURL(p.ID, "title") }
+			hx-swap="none"
+			value={ p.Title }
+		/>
+		<textarea
+			id="description"
+			type="text"
+			name="description"
+			placeholder="Description..."
+		>{ p.Description }</textarea>
+		<button
+			type="button"
+			hx-patch={ postIdXURL(p.ID, "description") }
+			hx-include="#description"
+			hx-swap="none"
+		>Save Description</button>
+		<textarea
+			id="markdown-content"
+			name="markdown-content"
+			placeholder="Markdown Content..."
+		>{ p.MarkdownContent }</textarea>
+		<button
+			type="button"
+			hx-patch={ postIdXURL(p.ID, "content") }
+			hx-include="#markdown-content"
+			hx-swap="none"
+		>Save Content</button>
 		<script>
-			const easyMDE = new EasyMDE();
+			const easyMDE = new EasyMDE({
+			    element: document.getElementById("markdown-content"),
+			    forceSync: true,
+			});
 		</script>
 	}
 }

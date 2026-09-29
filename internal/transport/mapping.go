@@ -58,3 +58,13 @@ func toPreviewView(p app.Post) views.PreviewView {
 		HTMLContent: string(p.HTMLContent),
 	}
 }
+
+func toPostEdit(p app.Post) views.PostEdit {
+	return views.PostEdit{
+		ID:              p.ID.String(),
+		Slug:            p.Slug,
+		Title:           p.Title,
+		Description:     p.Description,
+		MarkdownContent: string(p.MarkdownContent),
+	}
+}

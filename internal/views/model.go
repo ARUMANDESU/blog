@@ -49,7 +49,19 @@ type PreviewView struct {
 	HTMLContent string
 }
 
+type PostEdit struct {
+	ID              string
+	Slug            string
+	Title           string
+	Description     string
+	MarkdownContent string
+}
+
 const dateLayout = "2006-01-02"
+
+func postIdXURL(id, x string) templ.SafeURL {
+	return templ.SafeURL("/posts/" + id + "/" + x)
+}
 
 func postEditURL(id string) templ.SafeURL {
 	return templ.SafeURL("/posts/" + id + "/edit")
