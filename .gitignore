@@ -27,3 +27,6 @@ go.work.sum
 
 # Claude
 CLAUDE.md
+
+# SQLite
+/data/

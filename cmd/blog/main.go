@@ -6,6 +6,7 @@ import (
 	"mime"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/arumandesu/blog/internal/app"
 	"github.com/arumandesu/blog/internal/repository"
@@ -13,7 +14,10 @@ import (
 	"github.com/arumandesu/blog/pkg"
 )
 
+const DefaultDBPath = "./data/db.sqlite"
+
 func main() {
+	ctx := context.Background()
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	// Go falls back to the host's mime.types for these, and a scratch container has none.
@@ -28,7 +32,30 @@ func main() {
 		}
 	}
 
-	postRepo := repository.NewInMemoryPostRepo()
+	dbPath, ok := os.LookupEnv("SQLITE_DB_PATH")
+	if !ok {
+		dbPath = DefaultDBPath
+	}
+	err := os.MkdirAll(filepath.Dir(dbPath), 0o755)
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+	wdb, rdb, err := pkg.ConnectToSQLite(ctx, dbPath)
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+	defer wdb.Close()
+	defer rdb.Close()
+
+	err = pkg.Migrate(wdb)
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+
+	postRepo := repository.NewPostRepo(wdb, rdb)
 	if err := seed(context.Background(), postRepo); err != nil {
 		logger.Error(err.Error())
 		os.Exit(1)
@@ -39,7 +66,7 @@ func main() {
 	h := transport.NewHTTP(a, logger)
 	transport.Handle(mux, h)
 
-	err := http.ListenAndServe(":8080", mux)
+	err = http.ListenAndServe(":8080", mux)
 	if err != nil {
 		logger.Error(err.Error())
 		os.Exit(1)
