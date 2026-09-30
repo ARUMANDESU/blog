@@ -45,7 +45,7 @@ func ConnectToSQLite(ctx context.Context, path string) (writeDB, readDB *sql.DB,
 //
 // NOTE: pass writeDB only, not readDB, else migrations might hit SQLITE_BUSY
 func Migrate(db *sql.DB) error {
-	iofsD, err := iofs.New(migrations.SQLFiles, "")
+	iofsD, err := iofs.New(migrations.SQLFiles, ".")
 	if err != nil {
 		return err
 	}
