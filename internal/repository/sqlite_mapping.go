@@ -18,24 +18,40 @@ func parseTime(s string) (time.Time, error) {
 	return time.Parse(time.RFC3339, s)
 }
 
-func domainToPost(d *domain.Post) sqlcgen.Post {
-	var mdContent, htmlContent sql.NullString
-	if c := d.MarkdownContent(); c != nil {
-		mdContent.Valid = true
-		mdContent.String = string(c)
+func bytesToSqlNullString(b []byte) sql.NullString {
+	var ns sql.NullString
+	if b != nil {
+		ns.Valid = true
+		ns.String = string(b)
 	}
-	if c := d.HTMLContent(); c != nil {
-		htmlContent.Valid = true
-		htmlContent.String = string(c)
-	}
+	return ns
+}
 
+func NullStringToBytes(ns sql.NullString) []byte {
+	var b []byte
+	if ns.Valid {
+		b = []byte(ns.String)
+	}
+	return b
+}
+
+func stringToNull(s string) sql.NullString {
+	var ns sql.NullString
+	if len(s) > 0 {
+		ns.Valid = true
+		ns.String = s
+	}
+	return ns
+}
+
+func domainToPost(d *domain.Post) sqlcgen.Post {
 	return sqlcgen.Post{
 		ID:              d.Id().String(),
 		Title:           d.Title(),
-		Slug:            d.Slug(),
+		Slug:            stringToNull(d.Slug()),
 		Description:     d.Description(),
-		MarkdownContent: mdContent,
-		HtmlContent:     htmlContent,
+		MarkdownContent: bytesToSqlNullString(d.MarkdownContent()),
+		HtmlContent:     bytesToSqlNullString(d.HTMLContent()),
 		Status:          string(d.Status()),
 		CreatedAt:       formatTime(d.CreatedAt()),
 		UpdatedAt:       formatTime(d.UpdatedAt()),
@@ -43,13 +59,6 @@ func domainToPost(d *domain.Post) sqlcgen.Post {
 }
 
 func postToDomain(p sqlcgen.Post) (*domain.Post, error) {
-	var mdContent, htmlContent []byte
-	if p.MarkdownContent.Valid {
-		mdContent = []byte(p.MarkdownContent.String)
-	}
-	if p.HtmlContent.Valid {
-		htmlContent = []byte(p.HtmlContent.String)
-	}
 	createdAt, err := parseTime(p.CreatedAt)
 	if err != nil {
 		return nil, err
@@ -63,10 +72,10 @@ func postToDomain(p sqlcgen.Post) (*domain.Post, error) {
 	return domain.UnmarshalDB(domain.UnmarshalDBDTO{
 		ID:              uuid.MustParse(p.ID),
 		Title:           p.Title,
-		Slug:            p.Slug,
+		Slug:            p.Slug.String, // if not valid then zero string
 		Description:     p.Description,
-		MarkdownContent: mdContent,
-		HTMLContent:     htmlContent,
+		MarkdownContent: NullStringToBytes(p.MarkdownContent),
+		HTMLContent:     NullStringToBytes(p.HtmlContent),
 		Status:          domain.PostStatus(p.Status),
 		CreatedAt:       createdAt,
 		UpdatedAt:       updatedAt,
@@ -94,7 +103,7 @@ func postToApp(p sqlcgen.Post) (app.Post, error) {
 	return app.Post{
 		ID:              uuid.MustParse(p.ID),
 		Title:           p.Title,
-		Slug:            p.Slug,
+		Slug:            p.Slug.String, // if not valid then zero string
 		Description:     p.Description,
 		MarkdownContent: mdContent,
 		HTMLContent:     htmlContent,

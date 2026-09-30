@@ -11,7 +11,7 @@ import (
 type Post struct {
 	ID              string
 	Title           string
-	Slug            string
+	Slug            sql.NullString
 	Description     string
 	MarkdownContent sql.NullString
 	HtmlContent     sql.NullString

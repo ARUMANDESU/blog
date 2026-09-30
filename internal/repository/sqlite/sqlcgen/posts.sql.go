@@ -21,7 +21,7 @@ INSERT INTO posts (
 type CreatePostParams struct {
 	ID              string
 	Title           string
-	Slug            string
+	Slug            sql.NullString
 	Description     string
 	MarkdownContent sql.NullString
 	HtmlContent     sql.NullString
@@ -74,7 +74,7 @@ FROM posts
 WHERE slug = ?
 `
 
-func (q *Queries) GetPostBySlug(ctx context.Context, slug string) (Post, error) {
+func (q *Queries) GetPostBySlug(ctx context.Context, slug sql.NullString) (Post, error) {
 	row := q.db.QueryRowContext(ctx, getPostBySlug, slug)
 	var i Post
 	err := row.Scan(
@@ -179,7 +179,7 @@ WHERE id = ?
 
 type UpdatePostParams struct {
 	Title           string
-	Slug            string
+	Slug            sql.NullString
 	Description     string
 	MarkdownContent sql.NullString
 	HtmlContent     sql.NullString

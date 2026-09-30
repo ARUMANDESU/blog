@@ -30,7 +30,7 @@ func NewPostRepo(writeDB, readDB *sql.DB) *PostRepo {
 // CheckSlug implements [app.PostRepo].
 func (p *PostRepo) CheckSlug(ctx context.Context, slug string) (bool, error) {
 	r := pkg.SqlConn(ctx, p.wdb)
-	_, err := sqlcgen.New(r).GetPostBySlug(ctx, slug)
+	_, err := sqlcgen.New(r).GetPostBySlug(ctx, stringToNull(slug))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return false, nil
@@ -91,7 +91,7 @@ func (p *PostRepo) GetPostById(ctx context.Context, id uuid.UUID) (app.Post, err
 
 // GetPostBySlug implements [app.PostGetter].
 func (p *PostRepo) GetPostBySlug(ctx context.Context, slug string) (app.Post, error) {
-	post, err := sqlcgen.New(p.rdb).GetPostBySlug(ctx, slug)
+	post, err := sqlcgen.New(p.rdb).GetPostBySlug(ctx, stringToNull(slug))
 	if err != nil {
 		return app.Post{}, pkg.WrapDBError(err)
 	}

@@ -1,7 +1,7 @@
 CREATE TABLE posts (
     id text PRIMARY KEY,
     title text NOT NULL,
-    slug text NOT NULL,
+    slug text,
     description text NOT NULL,
     markdown_content text,
     html_content text,
