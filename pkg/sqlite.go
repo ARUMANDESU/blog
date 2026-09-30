@@ -3,8 +3,13 @@ package pkg
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
+	"github.com/arumandesu/blog/migrations"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/sqlite"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 	_ "modernc.org/sqlite"
 )
 
@@ -32,4 +37,29 @@ func ConnectToSQLite(ctx context.Context, path string) (writeDB, readDB *sql.DB,
 	readDB.SetMaxOpenConns(100)
 	readDB.SetConnMaxIdleTime(time.Minute)
 	return
+}
+
+// Migrate applies all migrations from /migrations dir.
+// Migrations table is 'migrations'.
+//
+// NOTE: pass writeDB only, not readDB, else migrations might hit SQLITE_BUSY
+func Migrate(db *sql.DB) error {
+	iofsD, err := iofs.New(migrations.SQLFiles, "")
+	if err != nil {
+		return err
+	}
+	sqliteD, err := sqlite.WithInstance(db, &sqlite.Config{MigrationsTable: "migrations"})
+	if err != nil {
+		return err
+	}
+
+	m, err := migrate.NewWithInstance("iofs", iofsD, "sqlite", sqliteD)
+	if err != nil {
+		return err
+	}
+
+	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return err
+	}
+	return nil
 }
