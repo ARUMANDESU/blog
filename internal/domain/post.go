@@ -144,6 +144,35 @@ func (p *Post) Status() PostStatus      { return p.status }
 func (p *Post) CreatedAt() time.Time    { return p.createdAt }
 func (p *Post) UpdatedAt() time.Time    { return p.updatedAt }
 
+type UnmarshalDBDTO struct {
+	ID              uuid.UUID
+	Title           string
+	Slug            string
+	Description     string
+	MarkdownContent []byte
+	HTMLContent     []byte
+	Status          PostStatus
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+}
+
+// UnmarshalDB convert dto into post
+//
+// WARNING: this can be used only by repository layer
+func UnmarshalDB(dto UnmarshalDBDTO) *Post {
+	return &Post{
+		id:              dto.ID,
+		title:           dto.Title,
+		slug:            dto.Slug,
+		description:     dto.Description,
+		markdownContent: dto.MarkdownContent,
+		htmlContent:     dto.HTMLContent,
+		status:          dto.Status,
+		createdAt:       dto.CreatedAt,
+		updatedAt:       dto.UpdatedAt,
+	}
+}
+
 func convertMd2HTML(mdContent []byte) []byte {
 	var buf bytes.Buffer
 	p := parser.New()
