@@ -9,6 +9,7 @@ var (
 	ErrInternal = errors.New("internal")
 	ErrNotFound = errors.New("not_found")
 	ErrConflict = errors.New("conflict")
+	ErrDup      = errors.New("duplicate")
 
 	// client errors
 	ErrEmpty              = errors.New("empty")

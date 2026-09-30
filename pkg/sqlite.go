@@ -10,7 +10,8 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
-	_ "modernc.org/sqlite"
+	msqlite "modernc.org/sqlite"
+	sqlite3 "modernc.org/sqlite/lib"
 )
 
 // sqlitePragmas are applied to every new connection via the DSN, since most
@@ -62,4 +63,23 @@ func Migrate(db *sql.DB) error {
 		return err
 	}
 	return nil
+}
+
+func WrapDBError(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrNotFound
+	}
+	if merr, ok := errors.AsType[*msqlite.Error](err); ok {
+		switch merr.Code() {
+		case sqlite3.SQLITE_CONSTRAINT_PRIMARYKEY:
+			return ErrDup
+		}
+	}
+
+	// not a db error
+	return err
 }
