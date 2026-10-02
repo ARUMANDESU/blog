@@ -175,7 +175,7 @@ func Edit(p PostEdit) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</textarea></div><p class=\"field__hint\">autosaves as you type &middot; <kbd>ctrl</kbd>/<kbd>&#8984;</kbd> + <kbd>s</kbd> saves now</p></div><script>\n\t\t\t(() => {\n\t\t\t\tconst area = document.getElementById(\"markdown-content\");\n\t\t\t\tconst easyMDE = new EasyMDE({\n\t\t\t\t\telement: area,\n\t\t\t\t\tforceSync: true,\n\t\t\t\t\tspellChecker: false,\n\t\t\t\t\tstatus: [\"lines\", \"words\"],\n\t\t\t\t\tminHeight: \"320px\",\n\t\t\t\t});\n\t\t\t\t// the textarea is hidden behind CodeMirror; relay edits so htmx sees them\n\t\t\t\teasyMDE.codemirror.on(\"change\", () => {\n\t\t\t\t\tarea.dispatchEvent(new Event(\"input\", { bubbles: true }));\n\t\t\t\t\tarea.dispatchEvent(new Event(\"mde-change\"));\n\t\t\t\t});\n\t\t\t})();\n\t\t</script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</textarea></div><p class=\"field__hint\">autosaves as you type &middot; <kbd>ctrl</kbd>/<kbd>&#8984;</kbd> + <kbd>s</kbd> saves now</p></div><script>\n\t\t\t(() => {\n\t\t\t\tconst area = document.getElementById(\"markdown-content\");\n\t\t\t\tconst easyMDE = new EasyMDE({\n\t\t\t\t\telement: area,\n\t\t\t\t\tforceSync: true,\n\t\t\t\t\tspellChecker: false,\n\t\t\t\t\tstatus: [\"lines\", \"words\"],\n\t\t\t\t\tminHeight: \"320px\",\n\t\t\t\t\ttoolbar: [\n\t\t\t\t\t\t'bold', 'italic', 'heading', '|',\n\t\t\t\t\t\t'quote', 'unordered-list', 'ordered-list', '|',\n\t\t\t\t\t\t'link',\n\t\t\t\t\t\t'image',          // inserts ![](https://)\n\t\t\t\t\t\t'upload-image',   // opens file picker -> imageUploadFunction\n\t\t\t\t\t\t'|',\n\t\t\t\t\t\t'preview', 'side-by-side', 'fullscreen',\n\t\t\t\t\t],\n\t\t\t\t\tuploadImage: true,\n\t\t\t\t\timageUploadFunction: (file, onSuccess, onError) => {\n\t\t\t\t\t\tconst formData = new FormData();\n\t\t\t\t\t\tformData.append('file', file);\n\n\t\t\t\t\t\tfetch('/media', {\n\t\t\t\t\t\t  method: 'POST',\n\t\t\t\t\t\t  body: formData,\n\t\t\t\t\t\t})\n\t\t\t\t\t\t  .then((res) => {\n\t\t\t\t\t\t\tif (!res.ok) throw new Error('Upload failed');\n\t\t\t\t\t\t\treturn res.json();\n\t\t\t\t\t\t  })\n\t\t\t\t\t\t  .then((data) => onSuccess(data.url))\n\t\t\t\t\t\t  .catch((err) => onError(err.message));\n\t\t\t\t\t  },\n\t\t\t\t\t  imageAccept: 'image/png, image/jpeg, image/gif, image/webp',\n\t\t\t\t\t  imageMaxSize: 5 * 1024 * 1024,\n\t\t\t\t\t  imageTexts: {\n\t\t\t\t\t\tsbInit: 'Attach files by drag and drop or paste from clipboard.',\n\t\t\t\t\t\tsbOnDragEnter: 'Drop image to upload it.',\n\t\t\t\t\t\tsbOnDrop: 'Uploading image #images_names#...',\n\t\t\t\t\t\tsbProgress: 'Uploading #file_name#: #progress#%',\n\t\t\t\t\t\tsbOnUploaded: 'Uploaded #image_name#',\n\t\t\t\t\t\tsizeUnits: ' B, KB, MB',\n\t\t\t\t\t  },\n\t\t\t\t\t  errorMessages: {\n\t\t\t\t\t\tnoFileGiven: 'You must select a file.',\n\t\t\t\t\t\ttypeNotAllowed: 'This image type is not allowed.',\n\t\t\t\t\t\tfileTooLarge: 'Image #image_name# is too big (#image_size#).\\nMaximum file size is #image_max_size#.',\n\t\t\t\t\t\timportError: 'Something went wrong when uploading the image #image_name#.',\n\t\t\t\t\t  },\n\t\t\t\t});\n\t\t\t\t// the textarea is hidden behind CodeMirror; relay edits so htmx sees them\n\t\t\t\teasyMDE.codemirror.on(\"change\", () => {\n\t\t\t\t\tarea.dispatchEvent(new Event(\"input\", { bubbles: true }));\n\t\t\t\t\tarea.dispatchEvent(new Event(\"mde-change\"));\n\t\t\t\t});\n\t\t\t})();\n\t\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -217,7 +217,7 @@ func fieldStatus(field string) templ.Component {
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue(field)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/edit.templ`, Line: 105, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/edit.templ`, Line: 146, Col: 51}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11)
 		if templ_7745c5c3_Err != nil {
@@ -290,7 +290,7 @@ func SlugInput(id, slug string, isoob bool) templ.Component {
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.ResolveAttributeValue(postIdXURL(id, "slug"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/edit.templ`, Line: 128, Col: 35}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/edit.templ`, Line: 169, Col: 35}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var14)
 		if templ_7745c5c3_Err != nil {
@@ -303,7 +303,7 @@ func SlugInput(id, slug string, isoob bool) templ.Component {
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.ResolveAttributeValue(slug)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/edit.templ`, Line: 130, Col: 14}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/edit.templ`, Line: 171, Col: 14}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var15)
 		if templ_7745c5c3_Err != nil {
@@ -316,7 +316,7 @@ func SlugInput(id, slug string, isoob bool) templ.Component {
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.ResolveAttributeValue(isoob)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/edit.templ`, Line: 131, Col: 21}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/edit.templ`, Line: 172, Col: 21}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var16)
 		if templ_7745c5c3_Err != nil {

@@ -90,6 +90,47 @@ templ Edit(p PostEdit) {
 					spellChecker: false,
 					status: ["lines", "words"],
 					minHeight: "320px",
+					toolbar: [
+						'bold', 'italic', 'heading', '|',
+						'quote', 'unordered-list', 'ordered-list', '|',
+						'link',
+						'image',          // inserts ![](https://)
+						'upload-image',   // opens file picker -> imageUploadFunction
+						'|',
+						'preview', 'side-by-side', 'fullscreen',
+					],
+					uploadImage: true,
+					imageUploadFunction: (file, onSuccess, onError) => {
+						const formData = new FormData();
+						formData.append('file', file);
+
+						fetch('/media', {
+						  method: 'POST',
+						  body: formData,
+						})
+						  .then((res) => {
+							if (!res.ok) throw new Error('Upload failed');
+							return res.json();
+						  })
+						  .then((data) => onSuccess(data.url))
+						  .catch((err) => onError(err.message));
+					  },
+					  imageAccept: 'image/png, image/jpeg, image/gif, image/webp',
+					  imageMaxSize: 5 * 1024 * 1024,
+					  imageTexts: {
+						sbInit: 'Attach files by drag and drop or paste from clipboard.',
+						sbOnDragEnter: 'Drop image to upload it.',
+						sbOnDrop: 'Uploading image #images_names#...',
+						sbProgress: 'Uploading #file_name#: #progress#%',
+						sbOnUploaded: 'Uploaded #image_name#',
+						sizeUnits: ' B, KB, MB',
+					  },
+					  errorMessages: {
+						noFileGiven: 'You must select a file.',
+						typeNotAllowed: 'This image type is not allowed.',
+						fileTooLarge: 'Image #image_name# is too big (#image_size#).\nMaximum file size is #image_max_size#.',
+						importError: 'Something went wrong when uploading the image #image_name#.',
+					  },
 				});
 				// the textarea is hidden behind CodeMirror; relay edits so htmx sees them
 				easyMDE.codemirror.on("change", () => {
