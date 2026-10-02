@@ -8,6 +8,15 @@ import (
 	"database/sql"
 )
 
+type Medium struct {
+	ID        string
+	PostID    sql.NullString
+	Mime      string
+	S3Key     string
+	CreatedAt string
+	DeletedAt sql.NullString
+}
+
 type Post struct {
 	ID              string
 	Title           string

@@ -1,8 +1,10 @@
 package transport
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -14,6 +16,15 @@ import (
 	"github.com/arumandesu/blog/internal/views"
 	"github.com/arumandesu/blog/pkg"
 )
+
+const MaxBodySize = 5 << 20
+
+var allowedMedia = map[string]string{
+	"image/png":  ".png",
+	"image/jpeg": ".jpg",
+	"image/gif":  ".gif",
+	"image/webp": ".webp",
+}
 
 type HTTP struct {
 	app    *app.App
@@ -45,6 +56,8 @@ func Handle(mux *http.ServeMux, h *HTTP) {
 	mux.HandleFunc("PATCH /posts/{id}/description", h.PatchPostDescription)
 	mux.HandleFunc("PATCH /posts/{id}/content", h.PatchPostContent)
 	mux.HandleFunc("PATCH /posts/{id}/slug", h.PatchPostSlug)
+
+	mux.HandleFunc("POST /media", h.UploadMedia)
 }
 
 func (h *HTTP) GetHome(w http.ResponseWriter, r *http.Request) {
@@ -289,6 +302,52 @@ func (h *HTTP) PatchPostSlug(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *HTTP) UploadMedia(w http.ResponseWriter, r *http.Request) {
+	// TODO: implement this
+	r.Body = http.MaxBytesReader(w, r.Body, MaxBodySize)
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		h.writeError(w, r, err)
+		return
+	}
+	defer file.Close()
+
+	buf := make([]byte, 512)
+	n, err := file.Read(buf)
+	if err != nil {
+		h.writeError(w, r, err)
+		return
+	}
+	contenType := http.DetectContentType(buf[:n])
+	_, err = file.Seek(0, io.SeekStart)
+	if err != nil {
+		h.writeError(w, r, err)
+		return
+	}
+
+	ext, ok := allowedMedia[contenType]
+	if !ok {
+		http.Error(w, "unsupported file type", http.StatusUnsupportedMediaType)
+		return
+	}
+
+	s3Key, err := h.app.UploadMedia(r.Context(), app.UploadMediaDTO{
+		R:    file,
+		Ext:  ext,
+		Mime: contenType,
+	})
+	if err != nil {
+		h.writeError(w, r, err)
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(map[string]string{"url": "/media/" + s3Key})
+	if err != nil {
+		h.writeError(w, r, err)
+		return
+	}
 }
 
 // redirect sends the client to url after a successful POST. htmx requests

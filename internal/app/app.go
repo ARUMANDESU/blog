@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"io"
 	"strings"
 	"time"
 	"uuid"
@@ -25,10 +26,21 @@ type PostGetter interface {
 	ListAllPosts(context.Context) ([]Post, error)
 }
 
+type MediaRepo interface {
+	GetMediaById(context.Context, uuid.UUID) (*domain.Media, error)
+	CreateMedia(context.Context, *domain.Media) error
+}
+
+type ObjectStorage interface {
+	PutObject(ctx context.Context, r io.Reader, s3Key, mime string) error
+}
+
 type App struct {
-	txManager  pkg.TxManager
-	PostRepo   PostRepo
-	PostGetter PostGetter
+	txManager     pkg.TxManager
+	PostRepo      PostRepo
+	PostGetter    PostGetter
+	MediaRepo     MediaRepo
+	ObjectStorage ObjectStorage
 }
 
 func New(txManager pkg.TxManager, postRepo PostRepo, postGetter PostGetter) *App {
@@ -250,6 +262,34 @@ func (a *App) UnarchivePost(ctx context.Context, id uuid.UUID) error {
 		}
 		return nil
 	})
+}
+
+type UploadMediaDTO struct {
+	R    io.Reader
+	Ext  string
+	Mime string
+}
+
+// UploadMedia uploads media to s3 and stores info in db, and returns s3Key
+func (a *App) UploadMedia(ctx context.Context, dto UploadMediaDTO) (string, error) {
+	s3key := uuid.New().String() + dto.Ext
+
+	err := a.ObjectStorage.PutObject(ctx, dto.R, s3key, dto.Mime)
+	if err != nil {
+		return "", err
+	}
+
+	media, err := domain.CreateMedia(dto.Mime, s3key)
+	if err != nil {
+		return "", err
+	}
+
+	err = a.MediaRepo.CreateMedia(ctx, media)
+	if err != nil {
+		return "", err
+	}
+
+	return s3key, nil
 }
 
 func (a *App) GetPostById(ctx context.Context, id uuid.UUID) (Post, error) {

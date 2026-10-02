@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/arumandesu/blog/internal/app"
-	"github.com/arumandesu/blog/internal/repository"
+	"github.com/arumandesu/blog/internal/repository/sqlite"
 	"github.com/arumandesu/blog/internal/transport"
 	"github.com/arumandesu/blog/pkg"
 )
@@ -55,7 +55,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	postRepo := repository.NewPostRepo(wdb, rdb)
+	postRepo := sqlite.NewPostRepo(wdb, rdb)
 	if err := seed(context.Background(), postRepo); err != nil {
 		logger.Error(err.Error())
 		os.Exit(1)

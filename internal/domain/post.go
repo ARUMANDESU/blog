@@ -144,7 +144,7 @@ func (p *Post) Status() PostStatus      { return p.status }
 func (p *Post) CreatedAt() time.Time    { return p.createdAt }
 func (p *Post) UpdatedAt() time.Time    { return p.updatedAt }
 
-type UnmarshalDBDTO struct {
+type UnmarshalPostDBDTO struct {
 	ID              uuid.UUID
 	Title           string
 	Slug            string
@@ -156,10 +156,10 @@ type UnmarshalDBDTO struct {
 	UpdatedAt       time.Time
 }
 
-// UnmarshalDB convert dto into post
+// UnmarshalPostDB convert dto into post
 //
 // WARNING: this can be used only by repository layer
-func UnmarshalDB(dto UnmarshalDBDTO) *Post {
+func UnmarshalPostDB(dto UnmarshalPostDBDTO) *Post {
 	return &Post{
 		id:              dto.ID,
 		title:           dto.Title,

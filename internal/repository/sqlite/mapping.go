@@ -1,4 +1,4 @@
-package repository
+package sqlite
 
 import (
 	"database/sql"
@@ -44,6 +44,45 @@ func stringToNull(s string) sql.NullString {
 	return ns
 }
 
+func uuidToNullString(u uuid.UUID) sql.NullString {
+	var ns sql.NullString
+	if u != uuid.Nil() {
+		ns.Valid = true
+		ns.String = u.String()
+	}
+	return ns
+}
+
+func nullStringToUUID(ns sql.NullString) uuid.UUID {
+	var u uuid.UUID
+	if ns.Valid {
+		u = uuid.MustParse(ns.String)
+	}
+	return u
+}
+
+func nullableTimeToNullString(nt *time.Time) sql.NullString {
+	if nt == nil {
+		return sql.NullString{}
+	}
+	if nt.IsZero() {
+		return sql.NullString{}
+	}
+	return sql.NullString{String: formatTime(*nt), Valid: true}
+}
+
+func nullStringToTimePtr(ns sql.NullString) (*time.Time, error) {
+	var tp *time.Time
+	if ns.Valid {
+		t, err := parseTime(ns.String)
+		if err != nil {
+			return nil, err
+		}
+		tp = &t
+	}
+	return tp, nil
+}
+
 func domainToPost(d *domain.Post) sqlcgen.Post {
 	return sqlcgen.Post{
 		ID:              d.Id().String(),
@@ -69,7 +108,7 @@ func postToDomain(p sqlcgen.Post) (*domain.Post, error) {
 		return nil, err
 	}
 
-	return domain.UnmarshalDB(domain.UnmarshalDBDTO{
+	return domain.UnmarshalPostDB(domain.UnmarshalPostDBDTO{
 		ID:              uuid.MustParse(p.ID),
 		Title:           p.Title,
 		Slug:            p.Slug.String, // if not valid then zero string
@@ -126,4 +165,35 @@ func postsToApp(ps []sqlcgen.Post) ([]app.Post, error) {
 	}
 
 	return as, nil
+}
+
+func domainToMedia(d *domain.Media) sqlcgen.Medium {
+	return sqlcgen.Medium{
+		ID:        d.Id().String(),
+		PostID:    uuidToNullString(d.PostId()),
+		Mime:      d.MIME(),
+		S3Key:     d.S3Key(),
+		CreatedAt: formatTime(d.CreatedAt()),
+		DeletedAt: nullableTimeToNullString(d.DeletedAt()),
+	}
+}
+
+func mediaToDomain(m sqlcgen.Medium) (*domain.Media, error) {
+	createdAt, err := parseTime(m.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	deletedAt, err := nullStringToTimePtr(m.DeletedAt)
+	if err != nil {
+		return nil, err
+	}
+	return domain.UnmarshalMediaDB(domain.UnmarshalMediaDBDTO{
+		ID:        uuid.MustParse(m.ID),
+		PostId:    nullStringToUUID(m.PostID),
+		Mime:      m.Mime,
+		S3Key:     m.S3Key,
+		CreatedAt: createdAt,
+		DeletedAt: deletedAt,
+	}), nil
 }
