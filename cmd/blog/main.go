@@ -2,13 +2,16 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/arumandesu/blog/internal/app"
+	"github.com/arumandesu/blog/internal/garage"
 	"github.com/arumandesu/blog/internal/repository/sqlite"
 	"github.com/arumandesu/blog/internal/transport"
 	"github.com/arumandesu/blog/pkg"
@@ -60,10 +63,31 @@ func main() {
 		logger.Error(err.Error())
 		os.Exit(1)
 	}
-	a := app.New(&pkg.NoOpTxManager{}, postRepo, postRepo)
+	mediaRepo := sqlite.NewMediaRepo(wdb, rdb)
+
+	s3, err := garage.NewS3(garage.Config{
+		Endpoint:   mustGetEnv("S3_ENDPOINT"),
+		IsSecure:   mustGetBoolEnv("S3_ENDPOINT_IS_SECURE"),
+		Region:     "garage",
+		Bucket:     "media",
+		CredId:     mustGetSecret("GK_ACCESS_KEY"),
+		CredSecret: mustGetSecret("GK_SECRET_KEY"),
+	})
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+
+	a := app.New(
+		&pkg.NoOpTxManager{},
+		postRepo,
+		postRepo,
+		mediaRepo,
+		s3,
+	)
 
 	mux := http.NewServeMux()
-	h := transport.NewHTTP(a, logger)
+	h := transport.NewHTTP(a, logger, mustGetEnv("S3_URL"))
 	transport.Handle(mux, h)
 
 	err = http.ListenAndServe(":8080", mux)
@@ -71,4 +95,37 @@ func main() {
 		logger.Error(err.Error())
 		os.Exit(1)
 	}
+}
+
+func mustGetSecret(key string) string {
+	if file, ok := os.LookupEnv(key + "_FILE"); ok && len(file) != 0 {
+		secret, err := os.ReadFile(file)
+		if err != nil {
+			panic(err)
+		}
+
+		return strings.TrimSpace(string(secret))
+	}
+	// else fallback to env
+	return mustGetEnv(key)
+}
+
+func mustGetEnv(key string) string {
+	key, ok := os.LookupEnv(key)
+	if !ok {
+		panic(key + " env not found")
+	}
+	return key
+
+}
+
+func mustGetBoolEnv(key string) bool {
+	s := mustGetEnv(key)
+	if l := strings.ToLower(s); l == "true" {
+		return true
+	} else if l == "false" {
+		return false
+	}
+
+	panic(fmt.Sprintf("key (%s) is not bool: %s", key, s))
 }

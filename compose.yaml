@@ -1,0 +1,62 @@
+services:
+  blog:
+    image: ${IMAGE}:${VERSION}
+    depends_on: [garage-s3]
+    ports: ["${PORT:-8080}:8080"]
+    environment:
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      S3_ENDPOINT_IS_SECURE: ${S3_ENDPOINT_IS_SECURE}
+      S3_URL: ${S3_URL}
+      GK_SECRET_KEY_FILE: /run/secrets/gk_secret_key
+      GK_ACCESS_KEY_FILE: /run/secrets/gk_access_key
+    secrets: [gk_secret_key, gk_access_key]
+    networks:
+      - blog-network
+  
+  garage-s3:
+    image: dxflrs/garage:${GARAGE_VERSION}
+    restart: unless-stopped
+    ports:
+      - "3900:3900"   # S3 API
+      - "3902:3902"   # Web
+    environment:
+      GARAGE_RPC_SECRET_FILE: /run/secrets/garage_rpc_secret
+    secrets: [garage_rpc_secret]
+    volumes:
+      - ./docker/garage.toml:/etc/garage.toml:ro
+      - garage-meta:/var/lib/garage/meta
+      - garage-data:/var/lib/garage/data
+    networks:
+      - blog-network
+
+  webui:
+    image: khairul169/garage-webui:latest
+    container_name: garage-webui
+    profiles: [debug]
+    depends_on: [garage-s3]
+    restart: unless-stopped
+    volumes:
+      - ./docker/garage.toml:/etc/garage.toml:ro
+    ports:
+      - 3909:3909
+    environment:
+      API_BASE_URL: "http://garage-s3:3903"
+      S3_ENDPOINT_URL: "http://garage-s3:3900"
+    networks:
+      - blog-network
+
+
+networks:
+  blog-network:
+
+volumes:
+  garage-meta:
+  garage-data:
+
+secrets:
+  gk_secret_key:
+    file: ./secrets/gk_secret_key
+  gk_access_key:
+    file: ./secrets/gk_access_key
+  garage_rpc_secret:
+    file: ./secrets/garage_rpc_secret

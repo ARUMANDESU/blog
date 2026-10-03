@@ -9,6 +9,8 @@ FROM scratch
 WORKDIR /app
 COPY --from=build /blog /app/blog
 ENV SQLITE_DB_PATH=/app/data/db.sqlite
+ENV S3_ENDPOINT=garage-s3:3900
+ENV S3_URL=localhost:3302
 VOLUME [ "/app/data" ]
 EXPOSE 8080
 ENTRYPOINT ["/app/blog"]

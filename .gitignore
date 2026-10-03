@@ -20,6 +20,9 @@ go.work.sum
 
 # env file
 .env
+.env.compose
+.env.dev
+.env.prod
 
 # Editor/IDE
 .idea/
@@ -30,3 +33,9 @@ CLAUDE.md
 
 # SQLite
 /data/
+
+# Docker compose configs
+/docker/
+
+# Secrets
+/secrets/

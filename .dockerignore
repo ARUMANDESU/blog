@@ -1,4 +1,7 @@
 .git
-data/
 *.out
 .env
+.env.*
+data/
+secrets/
+docker/

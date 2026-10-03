@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strings"
 	"uuid"
 
@@ -27,12 +28,13 @@ var allowedMedia = map[string]string{
 }
 
 type HTTP struct {
+	s3URL  string
 	app    *app.App
 	logger *slog.Logger
 }
 
-func NewHTTP(a *app.App, logger *slog.Logger) *HTTP {
-	return &HTTP{app: a, logger: logger}
+func NewHTTP(a *app.App, logger *slog.Logger, s3URL string) *HTTP {
+	return &HTTP{app: a, logger: logger, s3URL: s3URL}
 }
 
 func Handle(mux *http.ServeMux, h *HTTP) {
@@ -57,6 +59,7 @@ func Handle(mux *http.ServeMux, h *HTTP) {
 	mux.HandleFunc("PATCH /posts/{id}/content", h.PatchPostContent)
 	mux.HandleFunc("PATCH /posts/{id}/slug", h.PatchPostSlug)
 
+	mux.HandleFunc("GET /media/{s3_key}", h.GetMedia)
 	mux.HandleFunc("POST /media", h.UploadMedia)
 }
 
@@ -304,10 +307,21 @@ func (h *HTTP) PatchPostSlug(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (h *HTTP) GetMedia(w http.ResponseWriter, r *http.Request) {
+	s3Key := r.PathValue("s3_key")
+	s3Key = strings.TrimSpace(s3Key)
+	if len(s3Key) == 0 {
+		h.writeError(w, r, pkg.ErrInvalidInput)
+		return
+	}
+
+	target := h.s3URL + "/" + url.PathEscape(s3Key)
+	http.Redirect(w, r, target, http.StatusFound)
+}
+
 func (h *HTTP) UploadMedia(w http.ResponseWriter, r *http.Request) {
-	// TODO: implement this
 	r.Body = http.MaxBytesReader(w, r.Body, MaxBodySize)
-	file, _, err := r.FormFile("file")
+	file, header, err := r.FormFile("file")
 	if err != nil {
 		h.writeError(w, r, err)
 		return
@@ -337,6 +351,7 @@ func (h *HTTP) UploadMedia(w http.ResponseWriter, r *http.Request) {
 		R:    file,
 		Ext:  ext,
 		Mime: contenType,
+		Size: header.Size,
 	})
 	if err != nil {
 		h.writeError(w, r, err)

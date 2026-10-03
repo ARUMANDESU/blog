@@ -32,22 +32,30 @@ type MediaRepo interface {
 }
 
 type ObjectStorage interface {
-	PutObject(ctx context.Context, r io.Reader, s3Key, mime string) error
+	PutObject(ctx context.Context, r io.Reader, s3Key, mime string, size int64) error
 }
 
 type App struct {
 	txManager     pkg.TxManager
-	PostRepo      PostRepo
-	PostGetter    PostGetter
-	MediaRepo     MediaRepo
-	ObjectStorage ObjectStorage
+	postRepo      PostRepo
+	postGetter    PostGetter
+	mediaRepo     MediaRepo
+	objectStorage ObjectStorage
 }
 
-func New(txManager pkg.TxManager, postRepo PostRepo, postGetter PostGetter) *App {
+func New(
+	txManager pkg.TxManager,
+	postRepo PostRepo,
+	postGetter PostGetter,
+	mediaRepo MediaRepo,
+	objectStorage ObjectStorage,
+) *App {
 	return &App{
-		txManager:  txManager,
-		PostRepo:   postRepo,
-		PostGetter: postGetter,
+		txManager:     txManager,
+		postRepo:      postRepo,
+		postGetter:    postGetter,
+		mediaRepo:     mediaRepo,
+		objectStorage: objectStorage,
 	}
 }
 
@@ -65,7 +73,7 @@ type Post struct {
 
 func (a *App) CreatePost(ctx context.Context) (uuid.UUID, error) {
 	post := domain.CreatePost()
-	err := a.PostRepo.InsertPost(ctx, post)
+	err := a.postRepo.InsertPost(ctx, post)
 	if err != nil {
 		return uuid.UUID{}, err
 	}
@@ -77,7 +85,7 @@ func (a *App) CreatePost(ctx context.Context) (uuid.UUID, error) {
 func (a *App) PublishPost(ctx context.Context, id uuid.UUID) (string, error) {
 	var slug string
 	err := a.txManager.InTx(ctx, func(ctx context.Context) error {
-		post, err := a.PostRepo.GetDomainPostById(ctx, id)
+		post, err := a.postRepo.GetDomainPostById(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -88,7 +96,7 @@ func (a *App) PublishPost(ctx context.Context, id uuid.UUID) (string, error) {
 		}
 		slug = post.Slug()
 
-		err = a.PostRepo.UpdatePost(ctx, post)
+		err = a.postRepo.UpdatePost(ctx, post)
 		if err != nil {
 			return err
 		}
@@ -100,7 +108,7 @@ func (a *App) PublishPost(ctx context.Context, id uuid.UUID) (string, error) {
 func (a *App) UnpublishPost(ctx context.Context, id uuid.UUID) (string, error) {
 	var slug string
 	err := a.txManager.InTx(ctx, func(ctx context.Context) error {
-		post, err := a.PostRepo.GetDomainPostById(ctx, id)
+		post, err := a.postRepo.GetDomainPostById(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -108,7 +116,7 @@ func (a *App) UnpublishPost(ctx context.Context, id uuid.UUID) (string, error) {
 		post.Unpublish()
 		slug = post.Slug()
 
-		err = a.PostRepo.UpdatePost(ctx, post)
+		err = a.postRepo.UpdatePost(ctx, post)
 		if err != nil {
 			return err
 		}
@@ -121,7 +129,7 @@ func (a *App) UnpublishPost(ctx context.Context, id uuid.UUID) (string, error) {
 func (a *App) UpdateTitle(ctx context.Context, id uuid.UUID, title string) (string, error) {
 	var slug string
 	err := a.txManager.InTx(ctx, func(ctx context.Context) error {
-		post, err := a.PostRepo.GetDomainPostById(ctx, id)
+		post, err := a.postRepo.GetDomainPostById(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -142,7 +150,7 @@ func (a *App) UpdateTitle(ctx context.Context, id uuid.UUID, title string) (stri
 			}
 		}
 
-		err = a.PostRepo.UpdatePost(ctx, post)
+		err = a.postRepo.UpdatePost(ctx, post)
 		if err != nil {
 			return err
 		}
@@ -163,7 +171,7 @@ func truncateSlug(slug string) string {
 
 func (a *App) UpdateSlug(ctx context.Context, id uuid.UUID, slug string) error {
 	return a.txManager.InTx(ctx, func(ctx context.Context) error {
-		post, err := a.PostRepo.GetDomainPostById(ctx, id)
+		post, err := a.postRepo.GetDomainPostById(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -179,7 +187,7 @@ func (a *App) UpdateSlug(ctx context.Context, id uuid.UUID, slug string) error {
 			return err
 		}
 
-		err = a.PostRepo.UpdatePost(ctx, post)
+		err = a.postRepo.UpdatePost(ctx, post)
 		if err != nil {
 			return err
 		}
@@ -189,7 +197,7 @@ func (a *App) UpdateSlug(ctx context.Context, id uuid.UUID, slug string) error {
 
 func (a *App) UpdateDescription(ctx context.Context, id uuid.UUID, description string) error {
 	return a.txManager.InTx(ctx, func(ctx context.Context) error {
-		post, err := a.PostRepo.GetDomainPostById(ctx, id)
+		post, err := a.postRepo.GetDomainPostById(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -199,7 +207,7 @@ func (a *App) UpdateDescription(ctx context.Context, id uuid.UUID, description s
 			return err
 		}
 
-		err = a.PostRepo.UpdatePost(ctx, post)
+		err = a.postRepo.UpdatePost(ctx, post)
 		if err != nil {
 			return err
 		}
@@ -209,7 +217,7 @@ func (a *App) UpdateDescription(ctx context.Context, id uuid.UUID, description s
 
 func (a *App) UpdateContent(ctx context.Context, id uuid.UUID, content []byte) error {
 	return a.txManager.InTx(ctx, func(ctx context.Context) error {
-		post, err := a.PostRepo.GetDomainPostById(ctx, id)
+		post, err := a.postRepo.GetDomainPostById(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -219,7 +227,7 @@ func (a *App) UpdateContent(ctx context.Context, id uuid.UUID, content []byte) e
 			return err
 		}
 
-		err = a.PostRepo.UpdatePost(ctx, post)
+		err = a.postRepo.UpdatePost(ctx, post)
 		if err != nil {
 			return err
 		}
@@ -229,7 +237,7 @@ func (a *App) UpdateContent(ctx context.Context, id uuid.UUID, content []byte) e
 
 func (a *App) ArchivePost(ctx context.Context, id uuid.UUID) error {
 	return a.txManager.InTx(ctx, func(ctx context.Context) error {
-		post, err := a.PostRepo.GetDomainPostById(ctx, id)
+		post, err := a.postRepo.GetDomainPostById(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -239,7 +247,7 @@ func (a *App) ArchivePost(ctx context.Context, id uuid.UUID) error {
 			return err
 		}
 
-		err = a.PostRepo.UpdatePost(ctx, post)
+		err = a.postRepo.UpdatePost(ctx, post)
 		if err != nil {
 			return err
 		}
@@ -249,14 +257,14 @@ func (a *App) ArchivePost(ctx context.Context, id uuid.UUID) error {
 
 func (a *App) UnarchivePost(ctx context.Context, id uuid.UUID) error {
 	return a.txManager.InTx(ctx, func(ctx context.Context) error {
-		post, err := a.PostRepo.GetDomainPostById(ctx, id)
+		post, err := a.postRepo.GetDomainPostById(ctx, id)
 		if err != nil {
 			return err
 		}
 
 		post.Unarchive()
 
-		err = a.PostRepo.UpdatePost(ctx, post)
+		err = a.postRepo.UpdatePost(ctx, post)
 		if err != nil {
 			return err
 		}
@@ -268,13 +276,14 @@ type UploadMediaDTO struct {
 	R    io.Reader
 	Ext  string
 	Mime string
+	Size int64
 }
 
 // UploadMedia uploads media to s3 and stores info in db, and returns s3Key
 func (a *App) UploadMedia(ctx context.Context, dto UploadMediaDTO) (string, error) {
 	s3key := uuid.New().String() + dto.Ext
 
-	err := a.ObjectStorage.PutObject(ctx, dto.R, s3key, dto.Mime)
+	err := a.objectStorage.PutObject(ctx, dto.R, s3key, dto.Mime, dto.Size)
 	if err != nil {
 		return "", err
 	}
@@ -284,7 +293,7 @@ func (a *App) UploadMedia(ctx context.Context, dto UploadMediaDTO) (string, erro
 		return "", err
 	}
 
-	err = a.MediaRepo.CreateMedia(ctx, media)
+	err = a.mediaRepo.CreateMedia(ctx, media)
 	if err != nil {
 		return "", err
 	}
@@ -293,14 +302,14 @@ func (a *App) UploadMedia(ctx context.Context, dto UploadMediaDTO) (string, erro
 }
 
 func (a *App) GetPostById(ctx context.Context, id uuid.UUID) (Post, error) {
-	return a.PostGetter.GetPostById(ctx, id)
+	return a.postGetter.GetPostById(ctx, id)
 }
 func (a *App) GetPostBySlug(ctx context.Context, slug string) (Post, error) {
-	return a.PostGetter.GetPostBySlug(ctx, slug)
+	return a.postGetter.GetPostBySlug(ctx, slug)
 }
 func (a *App) ListPublishedPosts(ctx context.Context) ([]Post, error) {
-	return a.PostGetter.ListPublishedPosts(ctx)
+	return a.postGetter.ListPublishedPosts(ctx)
 }
 func (a *App) ListAllPosts(ctx context.Context) ([]Post, error) {
-	return a.PostGetter.ListAllPosts(ctx)
+	return a.postGetter.ListAllPosts(ctx)
 }

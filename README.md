@@ -6,6 +6,8 @@ My blog service. Just a CRUD project, nothing interesting here.
 - SQLite ([golib](https://gitlab.com/cznic/sqlite))
 - Garage S3
 
+## ENV
+Check out [.env.example](./.env.example)
 
 ## Rules
 - LLM usage must be as little as possible and never use it for writing code, but for example, generating commit msg is ok.
@@ -26,6 +28,12 @@ Don't edit old decisions when you change your mind. Instead create new decision 
 
 ## Features
 - [x] Markdown format support
+- [x] Uploading media
 - [ ] Telegram Instant View support
-- [ ] Uploading media
+- [ ] AUTH for admin (just a middleware and login handler with session not jwt)
 - [ ] RSS
+
+## Deliberately done or not:
+- No gracefull shutdown: not needed for one user - me
+- Observability: not need much for this project
+
