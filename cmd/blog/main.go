@@ -9,11 +9,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/arumandesu/blog/internal/app"
 	"github.com/arumandesu/blog/internal/garage"
 	"github.com/arumandesu/blog/internal/repository/sqlite"
 	"github.com/arumandesu/blog/internal/transport"
+	"github.com/arumandesu/blog/internal/workers"
 	"github.com/arumandesu/blog/pkg"
 )
 
@@ -86,6 +88,9 @@ func main() {
 		s3,
 	)
 
+	mediaWorker := workers.NewMediaCleaner(a, logger, mustGetEnvDurationOr("MEDIA_WORKER_INTERVAL", time.Hour))
+	go mediaWorker.Run(ctx)
+
 	mux := http.NewServeMux()
 	h := transport.NewHTTP(a, logger, mustGetEnv("S3_URL"))
 	transport.Handle(mux, h)
@@ -128,4 +133,15 @@ func mustGetBoolEnv(key string) bool {
 	}
 
 	panic(fmt.Sprintf("key (%s) is not bool: %s", key, s))
+}
+
+func mustGetEnvDurationOr(key string, def time.Duration) time.Duration {
+	if ds, ok := os.LookupEnv(key); ok {
+		d, err := time.ParseDuration(ds)
+		if err != nil {
+			panic(err)
+		}
+		return d
+	}
+	return def
 }

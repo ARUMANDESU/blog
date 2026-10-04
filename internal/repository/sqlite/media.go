@@ -3,6 +3,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"time"
 	"uuid"
 
 	"github.com/arumandesu/blog/internal/app"
@@ -52,6 +53,27 @@ func (m *MediaRepo) BatchUpdateMedia(ctx context.Context, media []*domain.Media)
 		}
 	}
 	return nil
+}
+
+// BatchDeleteMedia implements [app.MediaRepo].
+func (m *MediaRepo) BatchDeleteMedia(ctx context.Context, ids []string) error {
+	r := pkg.SqlConn(ctx, m.wdb)
+	err := sqlcgen.New(r).DeleteMediaByIds(ctx, ids)
+	if err != nil {
+		return pkg.WrapDBError(err)
+	}
+	return nil
+}
+
+// GetUnusedMedia implements [app.MediaRepo].
+func (m *MediaRepo) GetUnusedMedia(ctx context.Context) ([]*domain.Media, error) {
+	r := pkg.SqlConn(ctx, m.wdb)
+	cutoff := formatTime(time.Now().Add(-time.Hour))
+	media, err := sqlcgen.New(r).GetUnusedMedia(ctx, cutoff)
+	if err != nil {
+		return nil, pkg.WrapDBError(err)
+	}
+	return mediaToDomains(media)
 }
 
 // CreateMedia implements [app.MediaRepo].

@@ -2,6 +2,8 @@ package garage
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io"
 
 	"github.com/arumandesu/blog/internal/app"
@@ -46,4 +48,26 @@ func NewS3(cfg Config) (*S3, error) {
 func (s *S3) PutObject(ctx context.Context, r io.Reader, s3Key string, mime string, size int64) error {
 	_, err := s.client.PutObject(ctx, s.bucket, s3Key, r, size, minio.PutObjectOptions{ContentType: mime})
 	return err
+}
+
+// DeleteObjects implements [app.ObjectStorage].
+func (s *S3) DeleteObjects(ctx context.Context, s3Keys []string) error {
+	if len(s3Keys) == 0 {
+		return nil
+	}
+	return removeKeys(ctx, s.client, s.bucket, s3Keys)
+}
+
+func removeKeys(ctx context.Context, c *minio.Client, bucket string, keys []string) error {
+	ch := make(chan minio.ObjectInfo, len(keys))
+	for _, k := range keys {
+		ch <- minio.ObjectInfo{Key: k}
+	}
+	close(ch)
+
+	var errs []error
+	for e := range c.RemoveObjects(ctx, bucket, ch, minio.RemoveObjectsOptions{}) {
+		errs = append(errs, fmt.Errorf("%s: %w", e.ObjectName, e.Err))
+	}
+	return errors.Join(errs...)
 }
