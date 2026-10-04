@@ -33,6 +33,9 @@ func CreateMedia(mime, s3Key string) (*Media, error) {
 	}, nil
 }
 
+func (m *Media) Link(postId uuid.UUID) { m.postId = postId }
+func (m *Media) Unlink()               { m.postId = uuid.Nil() }
+
 func (m *Media) Id() uuid.UUID         { return m.id }
 func (m *Media) PostId() uuid.UUID     { return m.postId }
 func (m *Media) MIME() string          { return m.mime }

@@ -35,5 +35,7 @@ Don't edit old decisions when you change your mind. Instead create new decision 
 
 ## Deliberately done or not:
 - No gracefull shutdown: not needed for one user - me
-- Observability: not need much for this project
-
+- Observability: I don't need much for this project
+- Not enforcing media ownership: post to media is one-to-many rel, and there is only one admin = we good
+- Converting markdown into html in tx: I am aware that I can convert outside tx then update post in tx, which would shorten the lock, but I am lazy 
+- Lack of some tests: yes, I am lazy and this is not some enterprise service, but pet project done with limited llm usage so I don't forget some skills.

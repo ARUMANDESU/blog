@@ -8,6 +8,7 @@ package sqlcgen
 import (
 	"context"
 	"database/sql"
+	"strings"
 )
 
 const createMedia = `-- name: CreateMedia :exec
@@ -76,6 +77,51 @@ func (q *Queries) GetMediaByS3Key(ctx context.Context, s3Key string) (Medium, er
 		&i.DeletedAt,
 	)
 	return i, err
+}
+
+const getMediaByS3Keys = `-- name: GetMediaByS3Keys :many
+SELECT id, post_id, mime, s3_key, created_at, deleted_at FROM media
+WHERE s3_key IN (/*SLICE:keys*/?)
+`
+
+func (q *Queries) GetMediaByS3Keys(ctx context.Context, keys []string) ([]Medium, error) {
+	query := getMediaByS3Keys
+	var queryParams []interface{}
+	if len(keys) > 0 {
+		for _, v := range keys {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:keys*/?", strings.Repeat(",?", len(keys))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:keys*/?", "NULL", 1)
+	}
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Medium
+	for rows.Next() {
+		var i Medium
+		if err := rows.Scan(
+			&i.ID,
+			&i.PostID,
+			&i.Mime,
+			&i.S3Key,
+			&i.CreatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const updateMedia = `-- name: UpdateMedia :exec

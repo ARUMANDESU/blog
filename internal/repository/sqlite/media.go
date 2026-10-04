@@ -17,6 +17,43 @@ type MediaRepo struct {
 	wdb, rdb *sql.DB
 }
 
+// BatchGetMediaByS3Key implements [app.MediaRepo].
+func (m *MediaRepo) BatchGetMediaByS3Key(ctx context.Context, s3Keys []string) ([]*domain.Media, error) {
+	if len(s3Keys) == 0 {
+		return nil, nil
+	}
+
+	r := pkg.SqlConn(ctx, m.wdb)
+	media, err := sqlcgen.New(r).GetMediaByS3Keys(ctx, s3Keys)
+	if err != nil {
+		return nil, pkg.WrapDBError(err)
+	}
+
+	return mediaToDomains(media)
+}
+
+// BatchUpdateMedia implements [app.MediaRepo].
+func (m *MediaRepo) BatchUpdateMedia(ctx context.Context, media []*domain.Media) error {
+	r := pkg.SqlConn(ctx, m.wdb)
+	q := sqlcgen.New(r)
+
+	for _, d := range media {
+		m := domainToMedia(d)
+		err := q.UpdateMedia(ctx, sqlcgen.UpdateMediaParams{
+			PostID:    m.PostID,
+			Mime:      m.Mime,
+			S3Key:     m.S3Key,
+			CreatedAt: m.CreatedAt,
+			DeletedAt: m.DeletedAt,
+			ID:        m.ID,
+		})
+		if err != nil {
+			return pkg.WrapDBError(err)
+		}
+	}
+	return nil
+}
+
 // CreateMedia implements [app.MediaRepo].
 func (m *MediaRepo) CreateMedia(ctx context.Context, d *domain.Media) error {
 	r := pkg.SqlConn(ctx, m.wdb)

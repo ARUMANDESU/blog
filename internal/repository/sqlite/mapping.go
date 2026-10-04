@@ -197,3 +197,15 @@ func mediaToDomain(m sqlcgen.Medium) (*domain.Media, error) {
 		DeletedAt: deletedAt,
 	}), nil
 }
+
+func mediaToDomains(media []sqlcgen.Medium) ([]*domain.Media, error) {
+	domains := make([]*domain.Media, 0, len(media))
+	for _, m := range media {
+		d, err := mediaToDomain(m)
+		if err != nil {
+			return nil, err
+		}
+		domains = append(domains, d)
+	}
+	return domains, nil
+}

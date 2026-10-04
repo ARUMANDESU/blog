@@ -8,6 +8,7 @@ require (
 	github.com/a-h/templ v0.3.1020
 	github.com/golang-migrate/migrate/v4 v4.20.1
 	github.com/gosimple/slug v1.15.0
+	github.com/minio/minio-go/v7 v7.3.0
 	github.com/stretchr/testify v1.11.1
 	github.com/yuin/goldmark/v2 v2.1.5
 	modernc.org/sqlite v1.60.1
@@ -32,7 +33,6 @@ require (
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/minio/crc64nvme v1.1.1 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
-	github.com/minio/minio-go/v7 v7.3.0 // indirect
 	github.com/natefinch/atomic v1.0.1 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect

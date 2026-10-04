@@ -8,6 +8,10 @@ SELECT *
 FROM media
 WHERE s3_key = ?;
 
+-- name: GetMediaByS3Keys :many
+SELECT * FROM media
+WHERE s3_key IN (sqlc.slice('keys'));
+
 -- name: CreateMedia :exec
 INSERT INTO media (
     id, post_id, mime, s3_key,

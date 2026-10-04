@@ -2,7 +2,10 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"maps"
+	"slices"
 	"strings"
 	"time"
 	"uuid"
@@ -27,6 +30,8 @@ type PostGetter interface {
 }
 
 type MediaRepo interface {
+	BatchGetMediaByS3Key(ctx context.Context, s3Keys []string) ([]*domain.Media, error)
+	BatchUpdateMedia(ctx context.Context, media []*domain.Media) error
 	GetMediaById(context.Context, uuid.UUID) (*domain.Media, error)
 	CreateMedia(context.Context, *domain.Media) error
 }
@@ -216,11 +221,17 @@ func (a *App) UpdateDescription(ctx context.Context, id uuid.UUID, description s
 }
 
 func (a *App) UpdateContent(ctx context.Context, id uuid.UUID, content []byte) error {
+	currRefsMap := pkg.MediaRefs(string(content))
+	fmt.Printf("current refs: %v\n", currRefsMap)
+
 	return a.txManager.InTx(ctx, func(ctx context.Context) error {
 		post, err := a.postRepo.GetDomainPostById(ctx, id)
 		if err != nil {
 			return err
 		}
+
+		oldRefsMap := pkg.MediaRefs(string(post.MarkdownContent()))
+		fmt.Printf("old refs: %v\n", oldRefsMap)
 
 		err = post.UpdateContent(content)
 		if err != nil {
@@ -231,8 +242,32 @@ func (a *App) UpdateContent(ctx context.Context, id uuid.UUID, content []byte) e
 		if err != nil {
 			return err
 		}
-		return nil
+
+		currMedia, err := a.fetchMedia(ctx, slices.Collect(maps.Keys(currRefsMap))) // current for self-healing
+		if err != nil {
+			return err
+		}
+		unusedMedia, err := a.fetchMedia(ctx, pkg.Difference(oldRefsMap, currRefsMap)) // old \ current
+		if err != nil {
+			return err
+		}
+
+		for _, m := range currMedia {
+			m.Link(post.Id())
+		}
+		for _, m := range unusedMedia {
+			m.Unlink()
+		}
+
+		return a.mediaRepo.BatchUpdateMedia(ctx, slices.Concat(currMedia, unusedMedia))
 	})
+}
+
+func (a *App) fetchMedia(ctx context.Context, keys []string) ([]*domain.Media, error) {
+	if len(keys) == 0 {
+		return nil, nil
+	}
+	return a.mediaRepo.BatchGetMediaByS3Key(ctx, keys)
 }
 
 func (a *App) ArchivePost(ctx context.Context, id uuid.UUID) error {
