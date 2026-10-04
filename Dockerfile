@@ -11,6 +11,7 @@ COPY --from=build /blog /app/blog
 ENV SQLITE_DB_PATH=/app/data/db.sqlite
 ENV S3_ENDPOINT=garage-s3:3900
 ENV S3_URL=localhost:3302
+ENV MEDIA_WORKER_INTERVAL=1h
 VOLUME [ "/app/data" ]
 EXPOSE 8080
 ENTRYPOINT ["/app/blog"]

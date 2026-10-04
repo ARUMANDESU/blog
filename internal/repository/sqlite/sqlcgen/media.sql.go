@@ -39,6 +39,26 @@ func (q *Queries) CreateMedia(ctx context.Context, arg CreateMediaParams) error 
 	return err
 }
 
+const deleteMediaByIds = `-- name: DeleteMediaByIds :exec
+DELETE FROM media
+WHERE id IN (/*SLICE:ids*/?)
+`
+
+func (q *Queries) DeleteMediaByIds(ctx context.Context, ids []string) error {
+	query := deleteMediaByIds
+	var queryParams []interface{}
+	if len(ids) > 0 {
+		for _, v := range ids {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:ids*/?", strings.Repeat(",?", len(ids))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:ids*/?", "NULL", 1)
+	}
+	_, err := q.db.ExecContext(ctx, query, queryParams...)
+	return err
+}
+
 const getMedia = `-- name: GetMedia :one
 SELECT id, post_id, mime, s3_key, created_at, deleted_at
 FROM media
@@ -96,6 +116,43 @@ func (q *Queries) GetMediaByS3Keys(ctx context.Context, keys []string) ([]Medium
 		query = strings.Replace(query, "/*SLICE:keys*/?", "NULL", 1)
 	}
 	rows, err := q.db.QueryContext(ctx, query, queryParams...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Medium
+	for rows.Next() {
+		var i Medium
+		if err := rows.Scan(
+			&i.ID,
+			&i.PostID,
+			&i.Mime,
+			&i.S3Key,
+			&i.CreatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUnusedMedia = `-- name: GetUnusedMedia :many
+SELECT id, post_id, mime, s3_key, created_at, deleted_at FROM media
+WHERE
+    post_id IS NULL
+    AND created_at < ?1
+`
+
+func (q *Queries) GetUnusedMedia(ctx context.Context, cutoff string) ([]Medium, error) {
+	rows, err := q.db.QueryContext(ctx, getUnusedMedia, cutoff)
 	if err != nil {
 		return nil, err
 	}

@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"maps"
 	"slices"
@@ -32,12 +31,15 @@ type PostGetter interface {
 type MediaRepo interface {
 	BatchGetMediaByS3Key(ctx context.Context, s3Keys []string) ([]*domain.Media, error)
 	BatchUpdateMedia(ctx context.Context, media []*domain.Media) error
+	BatchDeleteMedia(ctx context.Context, ids []string) error
 	GetMediaById(context.Context, uuid.UUID) (*domain.Media, error)
+	GetUnusedMedia(context.Context) ([]*domain.Media, error)
 	CreateMedia(context.Context, *domain.Media) error
 }
 
 type ObjectStorage interface {
 	PutObject(ctx context.Context, r io.Reader, s3Key, mime string, size int64) error
+	DeleteObjects(ctx context.Context, s3Keys []string) error
 }
 
 type App struct {
@@ -222,7 +224,6 @@ func (a *App) UpdateDescription(ctx context.Context, id uuid.UUID, description s
 
 func (a *App) UpdateContent(ctx context.Context, id uuid.UUID, content []byte) error {
 	currRefsMap := pkg.MediaRefs(string(content))
-	fmt.Printf("current refs: %v\n", currRefsMap)
 
 	return a.txManager.InTx(ctx, func(ctx context.Context) error {
 		post, err := a.postRepo.GetDomainPostById(ctx, id)
@@ -231,7 +232,6 @@ func (a *App) UpdateContent(ctx context.Context, id uuid.UUID, content []byte) e
 		}
 
 		oldRefsMap := pkg.MediaRefs(string(post.MarkdownContent()))
-		fmt.Printf("old refs: %v\n", oldRefsMap)
 
 		err = post.UpdateContent(content)
 		if err != nil {
@@ -334,6 +334,32 @@ func (a *App) UploadMedia(ctx context.Context, dto UploadMediaDTO) (string, erro
 	}
 
 	return s3key, nil
+}
+
+func (a *App) DeleteUnusedMedia(ctx context.Context) error {
+	return a.txManager.InTx(ctx, func(ctx context.Context) error {
+		media, err := a.mediaRepo.GetUnusedMedia(ctx)
+		if err != nil {
+			return err
+		}
+		if len(media) == 0 {
+			return nil
+		}
+
+		keys := make([]string, 0, len(media))
+		ids := make([]string, 0, len(media))
+		for _, m := range media {
+			keys = append(keys, m.S3Key())
+			ids = append(ids, m.Id().String())
+		}
+
+		err = a.objectStorage.DeleteObjects(ctx, keys)
+		if err != nil {
+			return err
+		}
+
+		return a.mediaRepo.BatchDeleteMedia(ctx, ids)
+	})
 }
 
 func (a *App) GetPostById(ctx context.Context, id uuid.UUID) (Post, error) {
