@@ -29,8 +29,8 @@ Don't edit old decisions when you change your mind. Instead create new decision 
 ## Features
 - [x] Markdown format support
 - [x] Uploading media
+- [x] AUTH for admin (just a middleware and login handler with session not jwt)
 - [ ] Telegram Instant View support
-- [ ] AUTH for admin (just a middleware and login handler with session not jwt)
 - [ ] RSS
 
 ## Deliberately done or not:

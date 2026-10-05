@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"maps"
 	"slices"
@@ -12,7 +13,10 @@ import (
 	"github.com/arumandesu/blog/internal/domain"
 	"github.com/arumandesu/blog/pkg"
 	slugx "github.com/gosimple/slug"
+	"golang.org/x/crypto/bcrypt"
 )
+
+var ErrIncorectLoginOrPass = fmt.Errorf("%w: invalid login or password", pkg.ErrInvalidInput)
 
 type PostRepo interface {
 	GetDomainPostById(context.Context, uuid.UUID) (*domain.Post, error)
@@ -48,6 +52,9 @@ type App struct {
 	postGetter    PostGetter
 	mediaRepo     MediaRepo
 	objectStorage ObjectStorage
+	login         string
+	passwordHash  []byte
+	sessionId     string
 }
 
 func New(
@@ -56,6 +63,9 @@ func New(
 	postGetter PostGetter,
 	mediaRepo MediaRepo,
 	objectStorage ObjectStorage,
+	login string,
+	passwordHash []byte,
+	sessionId string,
 ) *App {
 	return &App{
 		txManager:     txManager,
@@ -63,6 +73,9 @@ func New(
 		postGetter:    postGetter,
 		mediaRepo:     mediaRepo,
 		objectStorage: objectStorage,
+		login:         login,
+		passwordHash:  passwordHash,
+		sessionId:     sessionId,
 	}
 }
 
@@ -360,6 +373,22 @@ func (a *App) DeleteUnusedMedia(ctx context.Context) error {
 
 		return a.mediaRepo.BatchDeleteMedia(ctx, ids)
 	})
+}
+
+func (a *App) Login(_ context.Context, login, password string) (string, error) {
+	if a.login != login {
+		return "", ErrIncorectLoginOrPass
+	}
+	err := bcrypt.CompareHashAndPassword(a.passwordHash, []byte(password))
+	if err != nil {
+		return "", ErrIncorectLoginOrPass
+	}
+
+	return a.sessionId, nil
+}
+
+func (a *App) Authenticate(_ context.Context, sessionId string) bool {
+	return a.sessionId == sessionId
 }
 
 func (a *App) GetPostById(ctx context.Context, id uuid.UUID) (Post, error) {

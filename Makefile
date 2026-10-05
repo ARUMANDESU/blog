@@ -1,6 +1,3 @@
-include .env
-export
-
 IMAGE := blog
 GARAGE_CONTAINER ?= blog-garage-s3-1
 COMPOSE_ENV_FILE ?= .env.compose
@@ -22,7 +19,7 @@ templ:
 	templ generate
 
 run: sqlc templ
-	go run ./cmd/blog
+	@set -a && . ./.env && set +a && go run ./cmd/blog
 
 clean-run: clean-db run
 

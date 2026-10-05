@@ -87,13 +87,21 @@ func main() {
 		postRepo,
 		mediaRepo,
 		s3,
+		mustGetSecret("ADMIN_LOGIN"),
+		[]byte(mustGetSecret("ADMIN_PASS_HASH")),
+		mustGetSecret("ADMIN_SESSION_ID"),
 	)
 
 	mediaWorker := workers.NewMediaCleaner(a, logger, mustGetEnvDurationOr("MEDIA_WORKER_INTERVAL", time.Hour))
 	go mediaWorker.Run(ctx)
 
 	mux := chi.NewMux()
-	h := transport.NewHTTP(a, logger, mustGetEnv("S3_URL"))
+	h := transport.NewHTTP(
+		a,
+		logger,
+		mustGetEnv("S3_URL"),
+		mustGetEnv("SESSION_COOKIE_NAME"),
+	)
 	transport.Route(mux, h)
 
 	err = http.ListenAndServe(":8080", mux)

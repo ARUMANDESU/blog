@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 	"uuid"
 
 	"github.com/arumandesu/blog/assets"
@@ -18,6 +19,7 @@ import (
 	"github.com/arumandesu/blog/pkg"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/httprate"
 )
 
 const MaxBodySize = 5 << 20
@@ -30,13 +32,24 @@ var allowedMedia = map[string]string{
 }
 
 type HTTP struct {
-	s3URL  string
-	app    *app.App
-	logger *slog.Logger
+	s3URL             string
+	sessionCookieName string
+	app               *app.App
+	logger            *slog.Logger
 }
 
-func NewHTTP(a *app.App, logger *slog.Logger, s3URL string) *HTTP {
-	return &HTTP{app: a, logger: logger, s3URL: s3URL}
+func NewHTTP(
+	a *app.App,
+	logger *slog.Logger,
+	s3URL string,
+	sessionCookieName string,
+) *HTTP {
+	return &HTTP{
+		app:               a,
+		logger:            logger,
+		s3URL:             s3URL,
+		sessionCookieName: sessionCookieName,
+	}
 }
 
 func Route(r chi.Router, h *HTTP) {
@@ -45,6 +58,10 @@ func Route(r chi.Router, h *HTTP) {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(http.NewCrossOriginProtection().Handler)
+	r.Use(middleware.ClientIPFromRemoteAddr)
+	r.Use(httprate.LimitBy(100, time.Minute, func(r *http.Request) (string, error) {
+		return httprate.CanonicalizeIP(middleware.GetClientIP(r.Context())), nil
+	}))
 
 	r.Get("/static/*", cacheImmutable(http.StripPrefix("/static", fileServer), "/static/fonts/"))
 
@@ -52,27 +69,43 @@ func Route(r chi.Router, h *HTTP) {
 
 	r.Route("/posts", func(r chi.Router) {
 		r.Get("/{slug}", h.GetPost)
-		r.Get("/{id}/edit", h.GetPostEdit)
-		r.Get("/{id}/preview", h.GetPostPreview)
 
-		r.Post("/", h.PostCreatePost)
-		r.Post("/{id}/archive", h.PostArchivePost)
-		r.Post("/{id}/unarchive", h.PostUnarchivePost)
-		r.Post("/{id}/publish", h.PostPublishPost)
-		r.Post("/{id}/unpublish", h.PostUnpublishPost)
+		r.Group(func(r chi.Router) {
+			r.Use(h.auth)
 
-		r.Patch("/{id}/title", h.PatchPostTitle)
-		r.Patch("/{id}/description", h.PatchPostDescription)
-		r.Patch("/{id}/content", h.PatchPostContent)
-		r.Patch("/{id}/slug", h.PatchPostSlug)
+			r.Get("/{id}/edit", h.GetPostEdit)
+			r.Get("/{id}/preview", h.GetPostPreview)
+
+			r.Post("/", h.PostCreatePost)
+			r.Post("/{id}/archive", h.PostArchivePost)
+			r.Post("/{id}/unarchive", h.PostUnarchivePost)
+			r.Post("/{id}/publish", h.PostPublishPost)
+			r.Post("/{id}/unpublish", h.PostUnpublishPost)
+
+			r.Patch("/{id}/title", h.PatchPostTitle)
+			r.Patch("/{id}/description", h.PatchPostDescription)
+			r.Patch("/{id}/content", h.PatchPostContent)
+			r.Patch("/{id}/slug", h.PatchPostSlug)
+		})
+	})
+
+	r.Route("/auth", func(r chi.Router) {
+		r.Get("/sign-in", h.GetSignIn)
+		r.With(httprate.LimitBy(5, time.Minute, func(r *http.Request) (string, error) {
+			return httprate.CanonicalizeIP(middleware.GetClientIP(r.Context())), nil
+		})).
+			Post("/sign-in", h.PostSignIn)
+		r.Post("/sign-out", h.PostSignOut)
 	})
 
 	r.Route("/admin", func(r chi.Router) {
+		r.Use(h.auth)
 		r.Get("/", h.GetAdmin)
 		r.Get("/guest", h.GetAdminGuest)
 	})
 
 	r.Route("/media", func(r chi.Router) {
+		r.Use(h.auth)
 		r.Get("/{s3_key}", h.GetMedia)
 		r.Post("/", h.PostUploadMedia)
 	})
@@ -378,6 +411,73 @@ func (h *HTTP) PostUploadMedia(w http.ResponseWriter, r *http.Request) {
 		h.writeError(w, r, err)
 		return
 	}
+}
+
+func (h *HTTP) GetSignIn(w http.ResponseWriter, r *http.Request) {
+	_ = views.Login().Render(r.Context(), w)
+}
+
+func (h *HTTP) PostSignIn(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		h.writeError(w, r, err)
+		return
+	}
+	login := strings.TrimSpace(r.FormValue("login"))
+	if len(login) == 0 {
+		h.writeError(w, r, pkg.ErrInvalidInput)
+		return
+	}
+	password := strings.TrimSpace(r.FormValue("password"))
+	if len(password) == 0 {
+		h.writeError(w, r, pkg.ErrInvalidInput)
+		return
+	}
+
+	sessionId, err := h.app.Login(r.Context(), login, password)
+	if err != nil {
+		h.writeError(w, r, err)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     h.sessionCookieName,
+		Value:    sessionId,
+		Path:     "/",
+		MaxAge:   int((8 * time.Hour).Seconds()),
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+	})
+	redirect(w, r, "/admin")
+}
+
+func (h *HTTP) PostSignOut(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     h.sessionCookieName,
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+	})
+}
+
+func (h *HTTP) auth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		c, err := r.Cookie(h.sessionCookieName)
+		if err != nil || c.Value == "" || !h.app.Authenticate(r.Context(), c.Value) {
+			if r.Method == http.MethodGet {
+				redirect(w, r, "/auth/sign-in")
+				return
+			}
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 // redirect sends the client to url after a successful POST. htmx requests
