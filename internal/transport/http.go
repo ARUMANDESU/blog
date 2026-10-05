@@ -16,6 +16,8 @@ import (
 	"github.com/arumandesu/blog/internal/domain"
 	"github.com/arumandesu/blog/internal/views"
 	"github.com/arumandesu/blog/pkg"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 const MaxBodySize = 5 << 20
@@ -37,30 +39,42 @@ func NewHTTP(a *app.App, logger *slog.Logger, s3URL string) *HTTP {
 	return &HTTP{app: a, logger: logger, s3URL: s3URL}
 }
 
-func Handle(mux *http.ServeMux, h *HTTP) {
+func Route(r chi.Router, h *HTTP) {
 	fileServer := http.FileServerFS(assets.StaticFiles)
 
-	mux.Handle("GET /static/", cacheImmutable(http.StripPrefix("/static", fileServer), "/static/fonts/"))
-	mux.HandleFunc("GET /", h.GetHome)
-	mux.HandleFunc("GET /posts/{slug}", h.GetPost)
-	mux.HandleFunc("GET /admin", h.GetAdmin)
-	mux.HandleFunc("GET /admin/guest", h.GetAdminGuest)
-	mux.HandleFunc("GET /posts/{id}/edit", h.GetPostEdit)
-	mux.HandleFunc("GET /posts/{id}/preview", h.GetPostPreview)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
 
-	mux.HandleFunc("POST /posts", h.PostCreatePost)
-	mux.HandleFunc("POST /posts/{id}/archive", h.PostArchivePost)
-	mux.HandleFunc("POST /posts/{id}/unarchive", h.PostUnarchivePost)
-	mux.HandleFunc("POST /posts/{id}/publish", h.PostPublishPost)
-	mux.HandleFunc("POST /posts/{id}/unpublish", h.PostUnpublishPost)
+	r.Get("/static/*", cacheImmutable(http.StripPrefix("/static", fileServer), "/static/fonts/"))
 
-	mux.HandleFunc("PATCH /posts/{id}/title", h.PatchPostTitle)
-	mux.HandleFunc("PATCH /posts/{id}/description", h.PatchPostDescription)
-	mux.HandleFunc("PATCH /posts/{id}/content", h.PatchPostContent)
-	mux.HandleFunc("PATCH /posts/{id}/slug", h.PatchPostSlug)
+	r.Get("/", h.GetHome)
 
-	mux.HandleFunc("GET /media/{s3_key}", h.GetMedia)
-	mux.HandleFunc("POST /media", h.UploadMedia)
+	r.Route("/posts", func(r chi.Router) {
+		r.Get("/{slug}", h.GetPost)
+		r.Get("/{id}/edit", h.GetPostEdit)
+		r.Get("/{id}/preview", h.GetPostPreview)
+
+		r.Post("/", h.PostCreatePost)
+		r.Post("/{id}/archive", h.PostArchivePost)
+		r.Post("/{id}/unarchive", h.PostUnarchivePost)
+		r.Post("/{id}/publish", h.PostPublishPost)
+		r.Post("/{id}/unpublish", h.PostUnpublishPost)
+
+		r.Patch("/{id}/title", h.PatchPostTitle)
+		r.Patch("/{id}/description", h.PatchPostDescription)
+		r.Patch("/{id}/content", h.PatchPostContent)
+		r.Patch("/{id}/slug", h.PatchPostSlug)
+	})
+
+	r.Route("/admin", func(r chi.Router) {
+		r.Get("/", h.GetAdmin)
+		r.Get("/guest", h.GetAdminGuest)
+	})
+
+	r.Route("/media", func(r chi.Router) {
+		r.Get("/{s3_key}", h.GetMedia)
+		r.Post("/", h.PostUploadMedia)
+	})
 }
 
 func (h *HTTP) GetHome(w http.ResponseWriter, r *http.Request) {
@@ -319,7 +333,7 @@ func (h *HTTP) GetMedia(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, target, http.StatusFound)
 }
 
-func (h *HTTP) UploadMedia(w http.ResponseWriter, r *http.Request) {
+func (h *HTTP) PostUploadMedia(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, MaxBodySize)
 	file, header, err := r.FormFile("file")
 	if err != nil {
@@ -405,11 +419,11 @@ func (h *HTTP) writeError(w http.ResponseWriter, r *http.Request, err error) {
 }
 
 // cacheImmutable marks everything under prefix as permanently cacheable
-func cacheImmutable(h http.Handler, prefix string) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func cacheImmutable(h http.Handler, prefix string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, prefix) {
 			w.Header().Set("Cache-Control", "max-age=31536000, immutable")
 		}
 		h.ServeHTTP(w, r)
-	})
+	}
 }

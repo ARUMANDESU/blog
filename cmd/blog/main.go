@@ -17,6 +17,7 @@ import (
 	"github.com/arumandesu/blog/internal/transport"
 	"github.com/arumandesu/blog/internal/workers"
 	"github.com/arumandesu/blog/pkg"
+	"github.com/go-chi/chi/v5"
 )
 
 const DefaultDBPath = "./data/db.sqlite"
@@ -61,10 +62,10 @@ func main() {
 	}
 
 	postRepo := sqlite.NewPostRepo(wdb, rdb)
-	if err := seed(context.Background(), postRepo); err != nil {
-		logger.Error(err.Error())
-		os.Exit(1)
-	}
+	// if err := seed(context.Background(), postRepo); err != nil {
+	// 	logger.Error(err.Error())
+	// 	os.Exit(1)
+	// }
 	mediaRepo := sqlite.NewMediaRepo(wdb, rdb)
 
 	s3, err := garage.NewS3(garage.Config{
@@ -91,9 +92,9 @@ func main() {
 	mediaWorker := workers.NewMediaCleaner(a, logger, mustGetEnvDurationOr("MEDIA_WORKER_INTERVAL", time.Hour))
 	go mediaWorker.Run(ctx)
 
-	mux := http.NewServeMux()
+	mux := chi.NewMux()
 	h := transport.NewHTTP(a, logger, mustGetEnv("S3_URL"))
-	transport.Handle(mux, h)
+	transport.Route(mux, h)
 
 	err = http.ListenAndServe(":8080", mux)
 	if err != nil {
