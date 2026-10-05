@@ -44,6 +44,7 @@ func Route(r chi.Router, h *HTTP) {
 
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(http.NewCrossOriginProtection().Handler)
 
 	r.Get("/static/*", cacheImmutable(http.StripPrefix("/static", fileServer), "/static/fonts/"))
 
